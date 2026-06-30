@@ -27,7 +27,7 @@ Commander is Peekaboo's Swift-native command-line framework. It combines declara
 - **Standard runtime options** – Every command gets `-v/--verbose`, `--json-output`, and `--log-level <trace|verbose|debug|info|warning|error|critical>` automatically so you can control logging without touching each command file.
 - **Program router** – `Program.resolve(argv:)` walks the descriptor tree (root command → subcommand → default subcommand) and produces a `CommandInvocation` with parsed values and the fully-qualified path.
 - **Binder APIs** – `CommanderCLIBinder` (living in PeekabooCLI) shows how to hydrate existing command structs by conforming them to `CommanderBindableCommand`. This keeps runtime logic untouched while swapping in Commander incrementally.
-- **Approachable concurrency ready** – the package enables `StrictConcurrency`, `ExistentialAny`, and `NonisolatedNonsendingByDefault` so anything that depends on Commander inherits Peekaboo's concurrency guarantees.
+- **Approachable concurrency ready** – the package builds in Swift 6 language mode, with CI exercising Swift 6.2.1 so dependents get concurrency-checked APIs without an ArgumentParser compatibility shim.
 
 ## Getting Started
 
