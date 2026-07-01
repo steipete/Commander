@@ -6,6 +6,7 @@ All notable changes to Commander will be documented in this file.
 
 ### Fixed
 - Reject unexpected positional arguments when a command declares no positional inputs.
+- Restore CI build coverage for the advertised iOS, tvOS, watchOS, and visionOS simulator targets.
 - Keep DocC catalogs out of Commander runtime resource bundles while preserving documentation generation.
 
 ## [0.2.2] - 2026-04-28
