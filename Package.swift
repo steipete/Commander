@@ -19,10 +19,7 @@ let package = Package(
     targets: [
         .target(
             name: "Commander",
-            path: "Sources/Commander",
-            resources: [
-                .process("Commander.docc"),
-            ]),
+            path: "Sources/Commander"),
         .testTarget(
             name: "CommanderTests",
             dependencies: ["Commander"],

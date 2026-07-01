@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Swift-6.2+-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 6.2+">
+  <img src="https://img.shields.io/badge/Swift-6.0+-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 6.0+">
   <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20iOS%20%7C%20tvOS%20%7C%20watchOS%20%7C%20visionOS-blue?style=for-the-badge" alt="Platforms">
   <a href="https://github.com/steipete/Commander/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/steipete/Commander/ci.yml?style=for-the-badge&label=tests" alt="CI Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="MIT License"></a>
@@ -27,7 +27,7 @@ Commander is Peekaboo's Swift-native command-line framework. It combines declara
 - **Standard runtime options** – Every command gets `-v/--verbose`, `--json-output`, and `--log-level <trace|verbose|debug|info|warning|error|critical>` automatically so you can control logging without touching each command file.
 - **Program router** – `Program.resolve(argv:)` walks the descriptor tree (root command → subcommand → default subcommand) and produces a `CommandInvocation` with parsed values and the fully-qualified path.
 - **Binder APIs** – `CommanderCLIBinder` (living in PeekabooCLI) shows how to hydrate existing command structs by conforming them to `CommanderBindableCommand`. This keeps runtime logic untouched while swapping in Commander incrementally.
-- **Approachable concurrency ready** – the package builds in Swift 6 language mode, with CI exercising Swift 6.2.1 so dependents get concurrency-checked APIs without an ArgumentParser compatibility shim.
+- **Approachable concurrency ready** – the package builds in Swift 6 language mode, with CI exercising Swift 6.3.3 so dependents get concurrency-checked APIs without an ArgumentParser compatibility shim.
 
 ## Getting Started
 

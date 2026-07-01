@@ -2,6 +2,12 @@
 
 All notable changes to Commander will be documented in this file.
 
+## Unreleased
+
+### Fixed
+- Reject unexpected positional arguments when a command declares no positional inputs.
+- Keep DocC catalogs out of Commander runtime resource bundles while preserving documentation generation.
+
 ## [0.2.2] - 2026-04-28
 
 ### Changed
