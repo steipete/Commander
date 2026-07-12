@@ -15,14 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15
+          - os: macos-26
           - os: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Select Xcode 16.4
+      - name: Select Xcode 26.6
         if: runner.os == 'macOS'
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
 
       - name: Install Swift toolchain (macOS/Linux)
         if: runner.os != 'Windows'
@@ -38,7 +38,7 @@ jobs:
 
   apple-simulators:
     name: Apple Platforms (${{ matrix.platform }})
-    runs-on: macos-15
+    runs-on: macos-26
     needs: desktop-swift
     strategy:
       fail-fast: false
@@ -50,8 +50,8 @@ jobs:
           - "visionOS Simulator"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Select Xcode 16.4
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Select Xcode 26.6
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
       - name: Build for ${{ matrix.platform }}
         run: |
           xcodebuild \

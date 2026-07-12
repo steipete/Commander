@@ -7,10 +7,10 @@ read_when:
 
 # Commander Multiplatform Tracking
 
-## Current Status (July 1, 2026)
+## Current Status (July 12, 2026)
 - **Supported platforms:** macOS 14+, iOS 17+, tvOS 17+, watchOS 10+, visionOS 1.0+ via `Package.swift` declarations; Linux remains unrestricted because SwiftPM only constrains Apple-family targets explicitly. Windows and Android are intentionally unsupported.
 - **Portability audit:** Commander exclusively depends on `Foundation` and concurrency features already available in Swift 6, so no conditional compilation was required.
-- **Testing coverage:** `CommanderTests` run natively on macOS and Linux. Apple simulator builds validate iOS, tvOS, watchOS, and visionOS. Windows and Android are not part of our CI story.
+- **Testing coverage:** `CommanderTests` run natively on macOS and Linux. Apple simulator builds validate iOS, tvOS, watchOS, and visionOS with Xcode 26.6. Windows and Android are not part of our CI story.
 
 > ¹ See [Swift Package Manager Platform Support](https://developer.apple.com/documentation/swift_packages/supportedplatform), which documents that only Apple OS minimums are declared in `Package.swift` and other platforms remain unconstrained.
 
@@ -24,7 +24,7 @@ read_when:
 | Standalone Commander workflow | ✅ | `.github/workflows/ci.yml` covers macOS, Linux, and iOS/tvOS/watchOS/visionOS simulator builds
 
 ## CI Design Highlights
-- **macOS host tests:** Run `swift test` on the `macos-15` runner with Swift 6.3.3.
+- **macOS host tests:** Run `swift test` on the `macos-26` runner with Swift 6.3.3.
 - **Apple simulator builds:** Each matrix entry runs `xcodebuild` against a generic iOS, tvOS, watchOS, or visionOS simulator destination.
 - **Linux:** We use `SwiftyLab/setup-swift@v1.14.0` with Ubuntu 24.04 targeting Swift 6.3.3. Windows coverage was dropped, so no WinGet/compnerd steps remain.
 ## Follow-Ups
