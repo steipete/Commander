@@ -77,8 +77,13 @@ public struct ValidationError: Error, LocalizedError, CustomStringConvertible, S
         self.message = message
     }
 
-    public var errorDescription: String? { self.message }
-    public var description: String { self.message }
+    public var errorDescription: String? {
+        self.message
+    }
+
+    public var description: String {
+        self.message
+    }
 }
 
 /// Exit sentinel understood by Peekaboo's CLI harness.
@@ -92,5 +97,7 @@ public struct ExitCode: Error, Equatable, CustomStringConvertible, Sendable {
     public static let success = ExitCode(0)
     public static let failure = ExitCode(1)
 
-    public var description: String { "ExitCode(\(self.rawValue))" }
+    public var description: String {
+        "ExitCode(\(self.rawValue))"
+    }
 }

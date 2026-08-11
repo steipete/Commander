@@ -22,8 +22,8 @@ private struct SampleSubcommand: ParsableCommand {
 @Suite("CommandDescription")
 struct CommandDescriptionTests {
     #if !os(Linux)
-    @Test("Defaults to empty values")
-    func defaultValues() {
+    @Test
+    func `Defaults to empty values`() {
         let description = CommandDescription()
         #expect(description.commandName == nil)
         #expect(description.abstract.isEmpty)
@@ -33,8 +33,8 @@ struct CommandDescriptionTests {
     }
     #endif
 
-    @Test("Builder returns captured metadata")
-    func builderCapturesValues() {
+    @Test
+    func `Builder returns captured metadata`() {
         let built = MainActorCommandDescription.describe {
             CommandDescription(commandName: "capture", abstract: "Captured")
         }
@@ -42,8 +42,8 @@ struct CommandDescriptionTests {
         #expect(built.abstract == "Captured")
     }
 
-    @Test("Commands expose metadata without configuration shim")
-    func commandMetadataIsAvailable() async {
+    @Test
+    func `Commands expose metadata without configuration shim`() async {
         let description = await MainActor.run {
             SampleRootCommand.commandDescription
         }

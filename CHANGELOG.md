@@ -4,6 +4,9 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+- Treat negative numeric tokens as option values instead of misclassifying them as short flags.
+
 ## [0.2.4] - 2026-07-15
 
 ### Platform/CI

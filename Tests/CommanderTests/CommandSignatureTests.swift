@@ -17,17 +17,17 @@ private struct SampleCommand: CommanderParsable, Sendable {
 }
 
 @Test
-func collectsCommandSignature() {
+func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
     #expect(signature.arguments.count == 1)
     #expect(signature.options.count == 1)
     #expect(signature.flags.count == 1)
     #expect(signature.optionGroups.count == 1)
 
-    let option = signature.options.first!
+    let option = try #require(signature.options.first)
     #expect(option.label == "app")
     #expect(option.names.contains(.long("app")))
 
-    let flag = signature.flags.first!
+    let flag = try #require(signature.flags.first)
     #expect(flag.names.contains(.long("dry-run")))
 }

@@ -46,7 +46,9 @@ public enum NameSpecification: Sendable {
     case customShort(Character, allowingJoined: Bool)
     case customLong(String)
 
-    public static var long: NameSpecification { .automatic }
+    public static var long: NameSpecification {
+        .automatic
+    }
 
     public static func long(_ value: String) -> NameSpecification {
         .longName(value)
