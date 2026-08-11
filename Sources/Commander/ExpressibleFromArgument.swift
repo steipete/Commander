@@ -6,27 +6,39 @@ public protocol ExpressibleFromArgument {
 }
 
 extension String: ExpressibleFromArgument {
-    public init?(argument: String) { self = argument }
+    public init?(argument: String) {
+        self = argument
+    }
 }
 
 extension Substring: ExpressibleFromArgument {
-    public init?(argument: String) { self = Substring(argument) }
+    public init?(argument: String) {
+        self = Substring(argument)
+    }
 }
 
 extension Int: ExpressibleFromArgument {
-    public init?(argument: String) { self.init(argument, radix: 10) }
+    public init?(argument: String) {
+        self.init(argument, radix: 10)
+    }
 }
 
 extension Int32: ExpressibleFromArgument {
-    public init?(argument: String) { self.init(argument, radix: 10) }
+    public init?(argument: String) {
+        self.init(argument, radix: 10)
+    }
 }
 
 extension Int64: ExpressibleFromArgument {
-    public init?(argument: String) { self.init(argument, radix: 10) }
+    public init?(argument: String) {
+        self.init(argument, radix: 10)
+    }
 }
 
 extension Double: ExpressibleFromArgument {
-    public init?(argument: String) { self.init(argument) }
+    public init?(argument: String) {
+        self.init(argument)
+    }
 }
 
 extension Bool: ExpressibleFromArgument {

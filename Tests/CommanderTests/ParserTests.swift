@@ -11,7 +11,7 @@ private let signature = CommandSignature(
     flags: [FlagDefinition(label: "dryRun", names: [.long("dry-run")], help: nil)])
 
 @Test
-func parsesOptionsFlagsAndArguments() throws {
+func `parses options flags and arguments`() throws {
     let parser = CommandParser(signature: signature)
     let values = try parser.parse(arguments: [
         "Project",
@@ -34,7 +34,7 @@ func parsesOptionsFlagsAndArguments() throws {
 }
 
 @Test
-func errorsOnUnknownOption() {
+func `errors on unknown option`() {
     let parser = CommandParser(signature: signature)
     #expect(throws: CommanderError.unknownOption("--foo")) {
         _ = try parser.parse(arguments: ["--foo"])
@@ -42,7 +42,7 @@ func errorsOnUnknownOption() {
 }
 
 @Test
-func errorsOnUnexpectedArgumentWhenCommandHasNoPositionalArguments() {
+func `errors on unexpected argument when command has no positional arguments`() {
     let parser = CommandParser(signature: CommandSignature())
     #expect(throws: CommanderError.unexpectedArgument("extra")) {
         _ = try parser.parse(arguments: ["extra"])
@@ -50,7 +50,7 @@ func errorsOnUnexpectedArgumentWhenCommandHasNoPositionalArguments() {
 }
 
 @Test
-func parserConsumesNegativeNumericOptionValues() throws {
+func `parser consumes negative numeric option values`() throws {
     let signature = CommandSignature(options: [
         .make(label: "count", names: [.long("count")]),
     ])
@@ -60,7 +60,7 @@ func parserConsumesNegativeNumericOptionValues() throws {
 }
 
 @Test
-func programResolvesCommand() throws {
+func `program resolves command`() throws {
     let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
     let program = Program(descriptors: [descriptor])
     let invocation = try program.resolve(argv: ["peekaboo", "demo", "Workspace"])
@@ -70,7 +70,7 @@ func programResolvesCommand() throws {
 }
 
 @Test
-func programDetectsUnknownCommand() {
+func `program detects unknown command`() {
     let program = Program(descriptors: [])
     #expect(throws: CommanderProgramError.unknownCommand("foo")) {
         _ = try program.resolve(argv: ["foo"])
@@ -78,7 +78,7 @@ func programDetectsUnknownCommand() {
 }
 
 @Test
-func programResolvesNestedSubcommand() throws {
+func `program resolves nested subcommand`() throws {
     let child = CommandDescriptor(name: "windows", abstract: "", discussion: nil, signature: signature)
     let parent = CommandDescriptor(
         name: "list",
@@ -94,7 +94,7 @@ func programResolvesNestedSubcommand() throws {
 }
 
 @Test
-func programUsesDefaultSubcommandWhenMissing() throws {
+func `program uses default subcommand when missing`() throws {
     let runtimeSignature = CommandSignature().withStandardRuntimeFlags()
     let apps = CommandDescriptor(
         name: "apps",
@@ -116,7 +116,7 @@ func programUsesDefaultSubcommandWhenMissing() throws {
 }
 
 @Test
-func programErrorsWhenSubcommandMissing() {
+func `program errors when subcommand missing`() {
     let child = CommandDescriptor(name: "apps", abstract: "", discussion: nil, signature: signature)
     let parent = CommandDescriptor(
         name: "list",
@@ -131,7 +131,7 @@ func programErrorsWhenSubcommandMissing() {
 }
 
 @Test
-func programErrorsOnUnknownSubcommand() {
+func `program errors on unknown subcommand`() {
     let child = CommandDescriptor(name: "windows", abstract: "", discussion: nil, signature: signature)
     let parent = CommandDescriptor(
         name: "list",
