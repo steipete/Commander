@@ -6,6 +6,7 @@ All notable changes to Commander will be documented in this file.
 
 ### Fixed
 - Treat negative numeric tokens as option values instead of misclassifying them as short flags.
+- Preserve explicitly declared numeric short options and flag packs when classifying negative numeric tokens.
 
 ## [0.2.4] - 2026-07-15
 

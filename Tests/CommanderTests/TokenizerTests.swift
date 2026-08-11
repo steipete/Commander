@@ -27,6 +27,20 @@ func `tokenizer preserves negative numbers as arguments`() {
 }
 
 @Test
+func `tokenizer preserves declared numeric short names`() {
+    let tokens = CommandLineTokenizer.tokenize(
+        ["-1", "-23"],
+        optionShortNames: ["1"],
+        flagShortNames: ["2", "3"])
+
+    #expect(tokens == [
+        .option(name: "1"),
+        .flag(name: "2"),
+        .flag(name: "3"),
+    ])
+}
+
+@Test
 func `tokenizer honors terminator`() {
     let tokens = CommandLineTokenizer.tokenize(["--", "tail", "values"])
     #expect(tokens.first == .terminator)

@@ -32,13 +32,18 @@ public struct CommandParser {
     /// - Throws: ``CommanderError`` when the arguments do not satisfy the
     ///   signature (unknown option, missing value, etc.).
     public func parse(arguments: [String]) throws -> ParsedValues {
-        let tokens = CommandLineTokenizer.tokenize(arguments)
+        let optionLookup = Self.buildOptionLookup(self.signature.options)
+        let flagLookup = Self.buildFlagLookup(self.signature.flags)
+        let optionShortNames = Set(self.signature.options.flatMap(\.names).compactMap(\.shortComponent))
+        let flagShortNames = Set(self.signature.flags.flatMap(\.names).compactMap(\.shortComponent))
+        let tokens = CommandLineTokenizer.tokenize(
+            arguments,
+            optionShortNames: optionShortNames,
+            flagShortNames: flagShortNames)
         var positional: [String] = []
         var options: [String: [String]] = [:]
         var flags = Set<String>()
 
-        let optionLookup = Self.buildOptionLookup(self.signature.options)
-        let flagLookup = Self.buildFlagLookup(self.signature.flags)
         let remainingOption = self.signature.options.first(where: { $0.parsing == .remaining })
 
         var index = 0

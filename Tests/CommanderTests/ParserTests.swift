@@ -60,6 +60,22 @@ func `parser consumes negative numeric option values`() throws {
 }
 
 @Test
+func `parser preserves declared numeric short options and flag packs`() throws {
+    let signature = CommandSignature(
+        options: [
+            .make(label: "slot", names: [.short("1")]),
+        ],
+        flags: [
+            .make(label: "second", names: [.short("2")]),
+            .make(label: "third", names: [.short("3")]),
+        ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["-1", "value", "-23"])
+
+    #expect(parsed.options["slot"] == ["value"])
+    #expect(parsed.flags == ["second", "third"])
+}
+
+@Test
 func `program resolves command`() throws {
     let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
     let program = Program(descriptors: [descriptor])
