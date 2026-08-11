@@ -15,6 +15,18 @@ func tokenizerParsesCombinedFlags() {
 }
 
 @Test
+func tokenizerPreservesNegativeNumbersAsArguments() {
+    let tokens = CommandLineTokenizer.tokenize(["--count", "-1", "--ratio", "-0.5"])
+
+    #expect(tokens == [
+        .option(name: "count"),
+        .argument("-1"),
+        .option(name: "ratio"),
+        .argument("-0.5"),
+    ])
+}
+
+@Test
 func tokenizerHonorsTerminator() {
     let tokens = CommandLineTokenizer.tokenize(["--", "tail", "values"])
     #expect(tokens.first == .terminator)

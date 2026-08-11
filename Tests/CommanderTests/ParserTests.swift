@@ -50,6 +50,16 @@ func errorsOnUnexpectedArgumentWhenCommandHasNoPositionalArguments() {
 }
 
 @Test
+func parserConsumesNegativeNumericOptionValues() throws {
+    let signature = CommandSignature(options: [
+        .make(label: "count", names: [.long("count")]),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["--count", "-1"])
+
+    #expect(parsed.options["count"] == ["-1"])
+}
+
+@Test
 func programResolvesCommand() throws {
     let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
     let program = Program(descriptors: [descriptor])

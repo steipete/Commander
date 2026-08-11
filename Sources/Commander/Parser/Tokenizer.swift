@@ -23,12 +23,16 @@ enum CommandLineTokenizer {
                 let name = String(segment.dropFirst(2))
                 result.append(.option(name: name))
             } else if segment.hasPrefix("-"), segment.count > 1 {
-                let body = segment.dropFirst()
-                if body.count == 1 {
-                    result.append(.option(name: String(body)))
+                if Double(segment) != nil {
+                    result.append(.argument(segment))
                 } else {
-                    for char in body {
-                        result.append(.flag(name: String(char)))
+                    let body = segment.dropFirst()
+                    if body.count == 1 {
+                        result.append(.option(name: String(body)))
+                    } else {
+                        for char in body {
+                            result.append(.flag(name: String(char)))
+                        }
                     }
                 }
             } else {
