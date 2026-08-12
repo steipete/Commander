@@ -21,6 +21,13 @@ private struct JoinedOptionCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private struct ArgumentRequirementCommand: CommanderParsable, Sendable {
+    @Argument var required: String
+    @Argument var defaulted = "."
+    @Argument var optional: String?
+    init() {}
+}
+
 @Test
 func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
@@ -43,4 +50,12 @@ func `collects joined short option metadata`() throws {
     let option = try #require(signature.options.first)
 
     #expect(option.joinedShortNames == ["D"])
+}
+
+@Test
+func `distinguishes required defaulted and optional arguments`() {
+    let arguments = CommandSignature.describe(ArgumentRequirementCommand()).arguments
+
+    #expect(arguments.map(\.label) == ["required", "defaulted", "optional"])
+    #expect(arguments.map(\.isOptional) == [false, true, true])
 }

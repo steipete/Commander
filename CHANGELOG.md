@@ -13,6 +13,7 @@ All notable changes to Commander will be documented in this file.
 - Preserve explicitly declared numeric short options and flag packs when classifying negative numeric tokens.
 - Preserve option-looking arguments byte-for-byte when an option uses the `remaining` parsing strategy.
 - Remove the Peekaboo-specific executable-name heuristic from `Program` routing.
+- Reject missing required positional arguments while treating defaulted argument wrappers as optional input.
 
 ## [0.2.4] - 2026-07-15
 

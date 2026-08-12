@@ -95,6 +95,11 @@ public struct CommandParser: Sendable {
         if self.signature.arguments.isEmpty, let unexpected = positional.first {
             throw CommanderError.unexpectedArgument(unexpected)
         }
+        for (index, definition) in self.signature.arguments.enumerated()
+            where !definition.isOptional && index >= positional.count
+        {
+            throw CommanderError.missingArgument(definition.label)
+        }
 
         return ParsedValues(positional: positional, options: options, flags: flags)
     }
