@@ -28,6 +28,11 @@ private struct ArgumentRequirementCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private struct RemainingArgumentCommand: CommanderParsable, Sendable {
+    @Argument(parsing: .remaining) var values: String
+    init() {}
+}
+
 @Test
 func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
@@ -58,4 +63,11 @@ func `distinguishes required defaulted and optional arguments`() {
 
     #expect(arguments.map(\.label) == ["required", "defaulted", "optional"])
     #expect(arguments.map(\.isOptional) == [false, true, true])
+}
+
+@Test
+func `collects remaining argument metadata`() throws {
+    let argument = try #require(CommandSignature.describe(RemainingArgumentCommand()).arguments.first)
+
+    #expect(argument.parsing == .remaining)
 }

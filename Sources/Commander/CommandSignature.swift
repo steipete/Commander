@@ -139,6 +139,19 @@ public struct ArgumentDefinition: Sendable, Equatable {
     public let label: String
     public let help: String?
     public let isOptional: Bool
+    public let parsing: ArgumentParsingStrategy
+
+    public init(
+        label: String,
+        help: String? = nil,
+        isOptional: Bool = false,
+        parsing: ArgumentParsingStrategy = .singleValue)
+    {
+        self.label = label
+        self.help = help
+        self.isOptional = isOptional
+        self.parsing = parsing
+    }
 }
 
 /// Canonical description of a boolean flag.
@@ -179,9 +192,10 @@ extension ArgumentDefinition {
     public static func make(
         label: String,
         help: String? = nil,
-        isOptional: Bool = false) -> ArgumentDefinition
+        isOptional: Bool = false,
+        parsing: ArgumentParsingStrategy = .singleValue) -> ArgumentDefinition
     {
-        ArgumentDefinition(label: label, help: help, isOptional: isOptional)
+        ArgumentDefinition(label: label, help: help, isOptional: isOptional, parsing: parsing)
     }
 }
 
@@ -189,6 +203,12 @@ extension ArgumentDefinition {
 public enum OptionParsingStrategy: Sendable, Equatable {
     case singleValue
     case upToNextOption
+    case remaining
+}
+
+/// Describes how many positional tokens an argument may consume.
+public enum ArgumentParsingStrategy: Sendable, Equatable {
+    case singleValue
     case remaining
 }
 

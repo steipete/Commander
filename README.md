@@ -131,7 +131,7 @@ Commander mirrors the ergonomics of Swift Argument Parser while keeping the pars
 
 | Wrapper | Description | Notable Parameters |
 | --- | --- | --- |
-| `@Argument` | Positional values. Commander automatically enforces optionals/non-optionals. | `help` |
+| `@Argument` | Positional values. Commander automatically enforces optionals/non-optionals and rejects excess values. | `help`, `parsing` (`singleValue`, `remaining`) |
 | `@Option` | Named options (supports short, long, and custom spellings). | `name`, `names`, `parsing` (`singleValue`, `upToNextOption`, `remaining`) |
 | `@Flag` | Boolean switches. Commander automatically wires both short & long spellings. | `name`, `names`, `help` |
 | `@OptionGroup` | Reusable sets of options/flags (e.g., focus/window option structs). | – |
@@ -160,6 +160,10 @@ let jsonFlag = FlagDefinition.make(
 - `singleValue`: exactly one argument follows the option (default).
 - `upToNextOption`: consume all values until the next option/flag (perfect for `--include foo bar`).
 - `remaining`: consume every raw token after the option, including option-looking values and `--`.
+
+Positional arguments consume one token by default. The final positional can opt into
+`@Argument(parsing: .remaining)` when a command intentionally accepts multiple values; all other commands reject trailing
+arguments instead of silently ignoring them.
 
 Long options accept attached values such as `--output=-dash`. Short options only accept joined values when they opt in
 explicitly, for example `@Option(name: .customShort("D", allowingJoined: true)) var define: String?` accepts `-Ddebug`.

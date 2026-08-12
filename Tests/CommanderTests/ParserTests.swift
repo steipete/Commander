@@ -52,6 +52,50 @@ func `errors on unexpected argument when command has no positional arguments`() 
 }
 
 @Test
+func `errors on excess positional arguments`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "input"),
+    ])
+
+    #expect(throws: CommanderError.unexpectedArgument("extra")) {
+        _ = try CommandParser(signature: signature).parse(arguments: ["file.txt", "extra"])
+    }
+}
+
+@Test
+func `remaining positional argument accepts multiple values`() throws {
+    let signature = CommandSignature(arguments: [
+        .make(label: "chord", parsing: .remaining),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["cmd+a", "cmd+c"])
+
+    #expect(parsed.positional == ["cmd+a", "cmd+c"])
+}
+
+@Test
+func `required remaining positional argument still requires a value`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "chord", parsing: .remaining),
+    ])
+
+    #expect(throws: CommanderError.missingArgument("chord")) {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `remaining positional argument must be final`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "inputs", parsing: .remaining),
+        .make(label: "output"),
+    ])
+
+    #expect(throws: CommanderError.invalidArgumentOrder("inputs")) {
+        _ = try CommandParser(signature: signature).parse(arguments: ["input.txt", "output.txt"])
+    }
+}
+
+@Test
 func `errors when a required positional argument is missing`() {
     let signature = CommandSignature(arguments: [
         .make(label: "source"),
