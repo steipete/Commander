@@ -32,6 +32,7 @@ public struct CommandParser: Sendable {
     /// - Throws: ``CommanderError`` when the arguments do not satisfy the
     ///   signature (unknown option, missing value, etc.).
     public func parse(arguments: [String]) throws -> ParsedValues {
+        try self.validateArgumentDefinitions()
         let optionLookup = Self.buildOptionLookup(self.signature.options)
         let flagLookup = Self.buildFlagLookup(self.signature.flags)
         let optionShortNames = Set(self.signature.options.flatMap(\.names).compactMap(\.shortComponent))
@@ -94,14 +95,7 @@ public struct CommandParser: Sendable {
             }
         }
 
-        if self.signature.arguments.isEmpty, let unexpected = positional.first {
-            throw CommanderError.unexpectedArgument(unexpected)
-        }
-        for (index, definition) in self.signature.arguments.enumerated()
-            where !definition.isOptional && index >= positional.count
-        {
-            throw CommanderError.missingArgument(definition.label)
-        }
+        try self.validate(positional: positional)
 
         return ParsedValues(positional: positional, options: options, flags: flags)
     }
@@ -112,6 +106,27 @@ public struct CommandParser: Sendable {
         let optionLookup: [String: OptionDefinition]
         let flagLookup: [String: String]
         let tokens: [Token]
+    }
+
+    private func validateArgumentDefinitions() throws {
+        guard let variadicIndex = self.signature.arguments.firstIndex(where: { $0.parsing == .remaining }) else {
+            return
+        }
+        guard variadicIndex == self.signature.arguments.index(before: self.signature.arguments.endIndex) else {
+            throw CommanderError.invalidArgumentOrder(self.signature.arguments[variadicIndex].label)
+        }
+    }
+
+    private func validate(positional: [String]) throws {
+        let acceptsRemainingArguments = self.signature.arguments.last?.parsing == .remaining
+        if !acceptsRemainingArguments, positional.count > self.signature.arguments.count {
+            throw CommanderError.unexpectedArgument(positional[self.signature.arguments.count])
+        }
+        for (index, definition) in self.signature.arguments.enumerated()
+            where !definition.isOptional && index >= positional.count
+        {
+            throw CommanderError.missingArgument(definition.label)
+        }
     }
 
     private static func consumeShortToken(

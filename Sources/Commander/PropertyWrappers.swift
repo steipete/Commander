@@ -85,6 +85,7 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
     private var storage: Value?
     private let help: String?
     private let hasDefaultValue: Bool
+    private let parsing: ArgumentParsingStrategy
 
     /// Accesses the parsed value, trapping when the argument is mandatory and
     /// was never bound.
@@ -104,16 +105,22 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
         }
     }
 
-    public init(wrappedValue: Value, help: String? = nil) {
+    public init(
+        wrappedValue: Value,
+        help: String? = nil,
+        parsing: ArgumentParsingStrategy = .singleValue)
+    {
         self.storage = wrappedValue
         self.help = help
         self.hasDefaultValue = true
+        self.parsing = parsing
     }
 
-    public init(help: String? = nil) {
+    public init(help: String? = nil, parsing: ArgumentParsingStrategy = .singleValue) {
         self.storage = nil
         self.help = help
         self.hasDefaultValue = false
+        self.parsing = parsing
     }
 
     public init() {
@@ -125,7 +132,8 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
         let definition = ArgumentDefinition(
             label: resolvedLabel,
             help: help,
-            isOptional: self.hasDefaultValue || Value.self is OptionalProtocol.Type)
+            isOptional: self.hasDefaultValue || Value.self is OptionalProtocol.Type,
+            parsing: self.parsing)
         signature.append(.argument(definition))
     }
 

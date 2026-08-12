@@ -7,6 +7,7 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
     case missingValue(option: String)
     case missingArgument(String)
     case unexpectedArgument(String)
+    case invalidArgumentOrder(String)
     case invalidValue(option: String, value: String)
 
     public var description: String {
@@ -19,6 +20,8 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
             "Missing argument: \(label)"
         case let .unexpectedArgument(value):
             "Unexpected argument: \(value)"
+        case let .invalidArgumentOrder(label):
+            "Variadic argument '\(label)' must be the final positional argument"
         case let .invalidValue(option, value):
             "Invalid value '\(value)' for option \(option)"
         }
