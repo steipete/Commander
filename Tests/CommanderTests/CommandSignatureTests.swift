@@ -50,6 +50,24 @@ func `collects command signature`() throws {
 }
 
 @Test
+func `command parser automatically flattens option groups`() throws {
+    let signature = CommandSignature.describe(SampleCommand())
+    let parsed = try CommandParser(signature: signature).parse(arguments: [
+        "Workspace",
+        "--app",
+        "Safari",
+        "--verbose",
+        "--json",
+        "result.json",
+    ])
+
+    #expect(parsed.positional == ["Workspace"])
+    #expect(parsed.options["app"] == ["Safari"])
+    #expect(parsed.options["json"] == ["result.json"])
+    #expect(parsed.flags == ["verbose"])
+}
+
+@Test
 func `collects joined short option metadata`() throws {
     let signature = CommandSignature.describe(JoinedOptionCommand())
     let option = try #require(signature.options.first)

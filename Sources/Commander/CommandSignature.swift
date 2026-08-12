@@ -58,7 +58,8 @@ public struct CommandSignature: Sendable {
 
 extension CommandSignature {
     /// Returns a copy where nested option groups are merged into a single
-    /// signature. Useful when building help output or agent metadata.
+    /// signature. Useful when building help output or agent metadata;
+    /// ``CommandParser`` applies this normalization automatically.
     public func flattened() -> CommandSignature {
         var combined = CommandSignature(
             arguments: self.arguments,

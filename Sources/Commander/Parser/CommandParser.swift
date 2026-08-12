@@ -18,7 +18,7 @@ public struct CommandParser: Sendable {
     let signature: CommandSignature
 
     public init(signature: CommandSignature) {
-        self.signature = signature
+        self.signature = signature.flattened()
     }
 
     // swiftlint:disable function_body_length
