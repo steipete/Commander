@@ -111,15 +111,11 @@ public struct Program: Sendable {
         }
     }
 
-    /// Compatibility entry point that treats a known root command at index zero
-    /// as an argument tail and otherwise treats the input as a complete command
-    /// line. New code should choose ``resolve(commandLine:)`` or
-    /// ``resolve(arguments:)`` explicitly.
+    /// Legacy spelling for ``resolve(commandLine:)``. This retains the original
+    /// full-process-arguments contract without guessing whether an executable
+    /// name that matches a root command should be removed.
     public func resolve(argv: [String]) throws -> CommandInvocation {
-        if let first = argv.first, self.descriptorLookup[first] != nil {
-            return try self.resolve(arguments: argv)
-        }
-        return try self.resolve(commandLine: argv)
+        try self.resolve(commandLine: argv)
     }
 
     private func resolveDescriptor(

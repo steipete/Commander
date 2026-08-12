@@ -150,16 +150,29 @@ func `program resolves an explicit argument tail`() throws {
 }
 
 @Test
-func `program compatibility entry point accepts generic executable names`() throws {
+func `program legacy argv entry point accepts generic executable names`() throws {
     let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
     let program = Program(descriptors: [descriptor])
 
     #expect(try program.resolve(argv: ["mycli", "demo", "Workspace"]).descriptor.name == "demo")
-    #expect(try program.resolve(argv: ["demo", "Workspace"]).descriptor.name == "demo")
 }
 
 @Test
-func `program compatibility entry point reports the unknown command rather than the executable`() {
+func `program legacy argv entry point preserves executable root collisions`() throws {
+    let executable = CommandDescriptor(
+        name: "mycli",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature())
+    let demo = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
+    let invocation = try Program(descriptors: [executable, demo]).resolve(argv: ["mycli", "demo", "Workspace"])
+
+    #expect(invocation.descriptor.name == "demo")
+    #expect(invocation.parsedValues.positional == ["Workspace"])
+}
+
+@Test
+func `program legacy argv entry point reports the unknown command rather than the executable`() {
     let program = Program(descriptors: [])
 
     #expect(throws: CommanderProgramError.unknownCommand("typo")) {
