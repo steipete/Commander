@@ -74,17 +74,24 @@ public struct Program: Sendable {
         self.descriptorLookup = Dictionary(uniqueKeysWithValues: descriptors.map { ($0.name, $0) })
     }
 
-    /// Walks the command tree, parses any remaining arguments, and returns a
-    /// ``CommandInvocation`` ready to `run()`.
+    /// Resolves a complete process command line, including its executable at
+    /// index zero.
     ///
-    /// - Parameter argv: Tokens supplied on the command line.
+    /// - Parameter commandLine: The complete command line, typically
+    ///   `CommandLine.arguments`.
     /// - Throws: ``CommanderProgramError`` when the path or arguments are
     ///   invalid.
-    public func resolve(argv: [String]) throws -> CommandInvocation {
-        var args = argv
-        if !args.isEmpty, args[0].hasSuffix("peekaboo") {
-            args.removeFirst()
+    public func resolve(commandLine: [String]) throws -> CommandInvocation {
+        guard !commandLine.isEmpty else {
+            throw CommanderProgramError.missingCommand
         }
+        return try self.resolve(arguments: Array(commandLine.dropFirst()))
+    }
+
+    /// Walks the command tree from an argument tail whose first token is the
+    /// root command.
+    public func resolve(arguments: [String]) throws -> CommandInvocation {
+        var args = arguments
         guard let commandName = args.first else {
             throw CommanderProgramError.missingCommand
         }
@@ -102,6 +109,17 @@ public struct Program: Sendable {
         } catch let error as CommanderError {
             throw CommanderProgramError.parsingError(error)
         }
+    }
+
+    /// Compatibility entry point that treats a known root command at index zero
+    /// as an argument tail and otherwise treats the input as a complete command
+    /// line. New code should choose ``resolve(commandLine:)`` or
+    /// ``resolve(arguments:)`` explicitly.
+    public func resolve(argv: [String]) throws -> CommandInvocation {
+        if let first = argv.first, self.descriptorLookup[first] != nil {
+            return try self.resolve(arguments: argv)
+        }
+        return try self.resolve(commandLine: argv)
     }
 
     private func resolveDescriptor(
