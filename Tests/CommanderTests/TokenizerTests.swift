@@ -40,6 +40,20 @@ func `tokenizer preserves declared numeric short names`() {
 }
 
 @Test
+func `tokenizer recognizes numeric joined short options without claiming negative positionals`() {
+    let joined = CommandLineTokenizer.tokenize(
+        ["-12"],
+        optionShortNames: ["1"],
+        joinedOptionShortNames: ["1"])
+    let positional = CommandLineTokenizer.tokenize(
+        ["-12"],
+        optionShortNames: ["1"])
+
+    #expect(joined == [.short("12")])
+    #expect(positional == [.argument("-12")])
+}
+
+@Test
 func `tokenizer preserves attached long option values`() {
     let tokens = CommandLineTokenizer.tokenize(["--output=-dash", "--empty="])
 
