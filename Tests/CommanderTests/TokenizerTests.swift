@@ -5,13 +5,13 @@ import Testing
 func `tokenizer parses single short option`() {
     let tokens = CommandLineTokenizer.tokenize(["-e", "value"])
     #expect(tokens.count == 2)
-    #expect(tokens[0] == .option(name: "e"))
+    #expect(tokens[0] == .short("e"))
 }
 
 @Test
 func `tokenizer parses combined flags`() {
     let tokens = CommandLineTokenizer.tokenize(["-abc"])
-    #expect(tokens == [.flag(name: "a"), .flag(name: "b"), .flag(name: "c")])
+    #expect(tokens == [.short("abc")])
 }
 
 @Test
@@ -19,9 +19,9 @@ func `tokenizer preserves negative numbers as arguments`() {
     let tokens = CommandLineTokenizer.tokenize(["--count", "-1", "--ratio", "-0.5"])
 
     #expect(tokens == [
-        .option(name: "count"),
+        .option(name: "count", attachedValue: nil),
         .argument("-1"),
-        .option(name: "ratio"),
+        .option(name: "ratio", attachedValue: nil),
         .argument("-0.5"),
     ])
 }
@@ -34,10 +34,20 @@ func `tokenizer preserves declared numeric short names`() {
         flagShortNames: ["2", "3"])
 
     #expect(tokens == [
-        .option(name: "1"),
-        .flag(name: "2"),
-        .flag(name: "3"),
+        .short("1"),
+        .short("23"),
     ])
+}
+
+@Test
+func `tokenizer preserves attached long option values`() {
+    let tokens = CommandLineTokenizer.tokenize(["--output=-dash", "--empty="])
+
+    #expect(tokens == [
+        .option(name: "output", attachedValue: "-dash"),
+        .option(name: "empty", attachedValue: ""),
+    ])
+    #expect(tokens.map(\.rawValue) == ["--output=-dash", "--empty="])
 }
 
 @Test

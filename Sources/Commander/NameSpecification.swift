@@ -71,6 +71,13 @@ public enum NameSpecification: Sendable {
         }
     }
 
+    var joinedShortName: Character? {
+        if case let .customShort(name, allowingJoined: true) = self {
+            return name
+        }
+        return nil
+    }
+
     private static func normalize(_ label: String) -> String {
         guard !label.isEmpty else { return label }
 

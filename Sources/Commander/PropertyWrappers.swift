@@ -67,7 +67,8 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
             label: resolvedLabel,
             names: resolvedNames,
             help: help,
-            parsing: parsing)
+            parsing: parsing,
+            joinedShortNames: Set(self.nameSpecifications.compactMap(\.joinedShortName)))
         signature.append(.option(definition))
     }
 

@@ -159,7 +159,10 @@ let jsonFlag = FlagDefinition.make(
 
 - `singleValue`: exactly one argument follows the option (default).
 - `upToNextOption`: consume all values until the next option/flag (perfect for `--include foo bar`).
-- `remaining`: consume the rest of `argv` (after `--`).
+- `remaining`: consume every raw token after the option, including option-looking values and `--`.
+
+Long options accept attached values such as `--output=-dash`. Short options only accept joined values when they opt in
+explicitly, for example `@Option(name: .customShort("D", allowingJoined: true)) var define: String?` accepts `-Ddebug`.
 
 For advanced scenarios, `CommanderBindableValues` gives you helpers (`decodeOption`, `requireOption`, `makeWindowOptions`, etc.) so existing command types can conform to `CommanderBindableCommand` and hydrate themselves from parsed values without rewriting runtime logic.
 
