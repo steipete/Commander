@@ -35,10 +35,12 @@ public struct CommandParser: Sendable {
         let optionLookup = Self.buildOptionLookup(self.signature.options)
         let flagLookup = Self.buildFlagLookup(self.signature.flags)
         let optionShortNames = Set(self.signature.options.flatMap(\.names).compactMap(\.shortComponent))
+        let joinedOptionShortNames = Set(self.signature.options.flatMap(\.joinedShortNames))
         let flagShortNames = Set(self.signature.flags.flatMap(\.names).compactMap(\.shortComponent))
         let tokens = CommandLineTokenizer.tokenize(
             arguments,
             optionShortNames: optionShortNames,
+            joinedOptionShortNames: joinedOptionShortNames,
             flagShortNames: flagShortNames)
         let shortTokenContext = ShortTokenContext(
             optionLookup: optionLookup,

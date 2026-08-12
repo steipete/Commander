@@ -11,6 +11,7 @@ All notable changes to Commander will be documented in this file.
 ### Fixed
 - Treat negative numeric tokens as option values instead of misclassifying them as short flags.
 - Preserve explicitly declared numeric short options and flag packs when classifying negative numeric tokens.
+- Recognize numeric-looking joined short options such as `-12` when `-1` owns an attached value.
 - Preserve option-looking arguments byte-for-byte when an option uses the `remaining` parsing strategy.
 - Remove the Peekaboo-specific executable-name heuristic from `Program` routing.
 - Reject missing required positional arguments while treating defaulted argument wrappers as optional input.

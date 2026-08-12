@@ -121,6 +121,24 @@ func `parser honors opt-in joined short option values`() throws {
 }
 
 @Test
+func `parser honors numeric joined short options without claiming negative positionals`() throws {
+    let joinedSignature = CommandSignature(options: [
+        .make(label: "slot", names: [.short("1")], joinedShortNames: ["1"]),
+    ])
+    let positionalSignature = CommandSignature(arguments: [
+        .make(label: "number"),
+    ], options: [
+        .make(label: "slot", names: [.short("1")]),
+    ])
+
+    let joined = try CommandParser(signature: joinedSignature).parse(arguments: ["-12"])
+    let positional = try CommandParser(signature: positionalSignature).parse(arguments: ["-12"])
+
+    #expect(joined.options["slot"] == ["2"])
+    #expect(positional.positional == ["-12"])
+}
+
+@Test
 func `parser rejects joined values when the short option does not opt in`() {
     let signature = CommandSignature(options: [
         .make(label: "output", names: [.short("o")]),
