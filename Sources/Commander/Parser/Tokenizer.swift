@@ -2,14 +2,30 @@ import Foundation
 
 /// Lexical token produced from command-line segments.
 enum Token: Equatable, Sendable {
-    case option(name: String)
-    case flag(name: String)
+    case option(name: String, attachedValue: String?)
+    case short(String)
     case argument(String)
     case terminator
+
+    var rawValue: String {
+        switch self {
+        case let .option(name, attachedValue):
+            if let attachedValue {
+                return "--\(name)=\(attachedValue)"
+            }
+            return "--\(name)"
+        case let .short(body):
+            return "-\(body)"
+        case let .argument(value):
+            return value
+        case .terminator:
+            return "--"
+        }
+    }
 }
 
-/// Splits `argv` segments into Commander tokens, honoring `--` terminators and
-/// short-flag packs (e.g. `-vvv`).
+/// Splits `argv` segments into Commander tokens while retaining attached values,
+/// `--` terminators, and short-token bodies for signature-aware parsing.
 enum CommandLineTokenizer {
     static func tokenize(
         _ argv: [String],
@@ -24,8 +40,14 @@ enum CommandLineTokenizer {
                 result.append(contentsOf: iterator.map { .argument($0) })
                 break
             } else if segment.hasPrefix("--") {
-                let name = String(segment.dropFirst(2))
-                result.append(.option(name: name))
+                let body = segment.dropFirst(2)
+                if let separator = body.firstIndex(of: "=") {
+                    let name = String(body[..<separator])
+                    let value = String(body[body.index(after: separator)...])
+                    result.append(.option(name: name, attachedValue: value))
+                } else {
+                    result.append(.option(name: String(body), attachedValue: nil))
+                }
             } else if segment.hasPrefix("-"), segment.count > 1 {
                 let body = segment.dropFirst()
                 if Double(segment) != nil,
@@ -36,13 +58,7 @@ enum CommandLineTokenizer {
                 {
                     result.append(.argument(segment))
                 } else {
-                    if body.count == 1 {
-                        result.append(.option(name: String(body)))
-                    } else {
-                        for char in body {
-                            result.append(.flag(name: String(char)))
-                        }
-                    }
+                    result.append(.short(String(body)))
                 }
             } else {
                 result.append(.argument(segment))

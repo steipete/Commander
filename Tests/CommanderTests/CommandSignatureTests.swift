@@ -16,6 +16,11 @@ private struct SampleCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private struct JoinedOptionCommand: CommanderParsable, Sendable {
+    @Option(name: .customShort("D", allowingJoined: true)) var define: String?
+    init() {}
+}
+
 @Test
 func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
@@ -30,4 +35,12 @@ func `collects command signature`() throws {
 
     let flag = try #require(signature.flags.first)
     #expect(flag.names.contains(.long("dry-run")))
+}
+
+@Test
+func `collects joined short option metadata`() throws {
+    let signature = CommandSignature.describe(JoinedOptionCommand())
+    let option = try #require(signature.options.first)
+
+    #expect(option.joinedShortNames == ["D"])
 }

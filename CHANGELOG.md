@@ -4,9 +4,13 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+### Added
+- Accept attached long-option values such as `--output=-dash` and opt-in joined short values such as `-Ddebug`.
+
 ### Fixed
 - Treat negative numeric tokens as option values instead of misclassifying them as short flags.
 - Preserve explicitly declared numeric short options and flag packs when classifying negative numeric tokens.
+- Preserve option-looking arguments byte-for-byte when an option uses the `remaining` parsing strategy.
 
 ## [0.2.4] - 2026-07-15
 

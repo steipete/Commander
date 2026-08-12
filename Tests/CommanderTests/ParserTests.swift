@@ -10,6 +10,8 @@ private let signature = CommandSignature(
     ],
     flags: [FlagDefinition(label: "dryRun", names: [.long("dry-run")], help: nil)])
 
+private func requireSendable(_ value: some Sendable) {}
+
 @Test
 func `parses options flags and arguments`() throws {
     let parser = CommandParser(signature: signature)
@@ -73,6 +75,59 @@ func `parser preserves declared numeric short options and flag packs`() throws {
 
     #expect(parsed.options["slot"] == ["value"])
     #expect(parsed.flags == ["second", "third"])
+}
+
+@Test
+func `parser accepts attached long option values`() throws {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.long("output")]),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["--output=-dash"])
+
+    #expect(parsed.options["output"] == ["-dash"])
+}
+
+@Test
+func `parser honors opt-in joined short option values`() throws {
+    let signature = CommandSignature(options: [
+        .make(label: "define", names: [.short("D")], joinedShortNames: ["D"]),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["-Ddebug"])
+
+    #expect(parsed.options["define"] == ["debug"])
+}
+
+@Test
+func `parser rejects joined values when the short option does not opt in`() {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.short("o")]),
+    ])
+
+    #expect(throws: CommanderError.unknownOption("-o")) {
+        _ = try CommandParser(signature: signature).parse(arguments: ["-ovalue"])
+    }
+}
+
+@Test
+func `remaining option preserves raw option-looking arguments`() throws {
+    let signature = CommandSignature(options: [
+        .make(label: "rest", names: [.long("rest")], parsing: .remaining),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: [
+        "--rest",
+        "one",
+        "--literal=value",
+        "-x",
+        "--",
+        "tail",
+    ])
+
+    #expect(parsed.options["rest"] == ["one", "--literal=value", "-x", "--", "tail"])
+}
+
+@Test
+func `command parser is sendable`() {
+    requireSendable(CommandParser(signature: CommandSignature()))
 }
 
 @Test

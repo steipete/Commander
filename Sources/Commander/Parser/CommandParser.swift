@@ -14,14 +14,14 @@ public struct ParsedValues: Sendable, Equatable {
 }
 
 /// Consumes tokenized arguments using a ``CommandSignature``.
-public struct CommandParser {
+public struct CommandParser: Sendable {
     let signature: CommandSignature
 
     public init(signature: CommandSignature) {
         self.signature = signature
     }
 
-    // swiftlint:disable cyclomatic_complexity function_body_length
+    // swiftlint:disable function_body_length
     /// Tokenizes the supplied arguments and groups them into positional
     /// values, options, and flags.
     ///
@@ -40,6 +40,10 @@ public struct CommandParser {
             arguments,
             optionShortNames: optionShortNames,
             flagShortNames: flagShortNames)
+        let shortTokenContext = ShortTokenContext(
+            optionLookup: optionLookup,
+            flagLookup: flagLookup,
+            tokens: tokens)
         var positional: [String] = []
         var options: [String: [String]] = [:]
         var flags = Set<String>()
@@ -51,72 +55,39 @@ public struct CommandParser {
             let token = tokens[index]
             index += 1
             switch token {
-            case let .option(name):
+            case let .option(name, attachedValue):
                 if let definition = optionLookup[name] {
-                    var consumed: [String] = []
-                    switch definition.parsing {
-                    case .singleValue:
-                        guard index < tokens.count else {
-                            throw CommanderError.missingValue(option: name)
-                        }
-                        if case let .argument(value) = tokens[index] {
-                            consumed.append(value)
-                            index += 1
-                        } else {
-                            throw CommanderError.missingValue(option: name)
-                        }
-                    case .upToNextOption:
-                        parsingLoop: while index < tokens.count {
-                            switch tokens[index] {
-                            case let .argument(value):
-                                consumed.append(value)
-                                index += 1
-                            case .terminator:
-                                break parsingLoop
-                            case .option, .flag:
-                                break parsingLoop
-                            }
-                        }
-                    case .remaining:
-                        while index < tokens.count {
-                            if case let .argument(value) = tokens[index] {
-                                consumed.append(value)
-                            }
-                            index += 1
-                        }
-                    }
+                    let consumed = try Self.consumeOption(
+                        definition,
+                        displayName: "--\(name)",
+                        attachedValue: attachedValue,
+                        tokens: tokens,
+                        index: &index)
                     options[definition.label, default: []].append(contentsOf: consumed)
-                } else if let flagLabel = flagLookup[name] {
+                } else if attachedValue == nil, let flagLabel = flagLookup[name] {
                     flags.insert(flagLabel)
                 } else {
-                    throw CommanderError.unknownOption("--" + name)
+                    throw CommanderError.unknownOption(token.rawValue)
                 }
-            case let .flag(name):
-                guard let flagLabel = flagLookup[name] else {
-                    throw CommanderError.unknownOption("-" + name)
-                }
-                flags.insert(flagLabel)
+            case let .short(body):
+                try Self.consumeShortToken(
+                    body,
+                    context: shortTokenContext,
+                    index: &index,
+                    options: &options,
+                    flags: &flags)
             case let .argument(value):
                 positional.append(value)
             case .terminator:
                 if let remainingOption {
-                    var tail: [String] = []
-                    while index < tokens.count {
-                        if case let .argument(value) = tokens[index] {
-                            tail.append(value)
-                        }
-                        index += 1
-                    }
+                    let tail = tokens[index...].map(\.rawValue)
+                    index = tokens.endIndex
                     if !tail.isEmpty {
                         options[remainingOption.label, default: []].append(contentsOf: tail)
                     }
                 } else {
-                    while index < tokens.count {
-                        if case let .argument(value) = tokens[index] {
-                            positional.append(value)
-                        }
-                        index += 1
-                    }
+                    positional.append(contentsOf: tokens[index...].map(\.rawValue))
+                    index = tokens.endIndex
                 }
             }
         }
@@ -128,7 +99,95 @@ public struct CommandParser {
         return ParsedValues(positional: positional, options: options, flags: flags)
     }
 
-    // swiftlint:enable cyclomatic_complexity function_body_length
+    // swiftlint:enable function_body_length
+
+    private struct ShortTokenContext {
+        let optionLookup: [String: OptionDefinition]
+        let flagLookup: [String: String]
+        let tokens: [Token]
+    }
+
+    private static func consumeShortToken(
+        _ body: String,
+        context: ShortTokenContext,
+        index: inout Int,
+        options: inout [String: [String]],
+        flags: inout Set<String>) throws
+    {
+        guard let firstName = body.first else {
+            throw CommanderError.unknownOption("-")
+        }
+
+        if body.count == 1 {
+            let name = String(firstName)
+            if let definition = context.optionLookup[name] {
+                let consumed = try Self.consumeOption(
+                    definition,
+                    displayName: "-\(name)",
+                    attachedValue: nil,
+                    tokens: context.tokens,
+                    index: &index)
+                options[definition.label, default: []].append(contentsOf: consumed)
+            } else if let flagLabel = context.flagLookup[name] {
+                flags.insert(flagLabel)
+            } else {
+                throw CommanderError.unknownOption("-\(name)")
+            }
+            return
+        }
+
+        if let definition = context.optionLookup[String(firstName)], definition.joinedShortNames.contains(firstName) {
+            var attachedValue = String(body.dropFirst())
+            if attachedValue.first == "=" {
+                attachedValue.removeFirst()
+            }
+            let consumed = try Self.consumeOption(
+                definition,
+                displayName: "-\(firstName)",
+                attachedValue: attachedValue,
+                tokens: context.tokens,
+                index: &index)
+            options[definition.label, default: []].append(contentsOf: consumed)
+            return
+        }
+
+        for name in body {
+            guard let flagLabel = context.flagLookup[String(name)] else {
+                throw CommanderError.unknownOption("-\(name)")
+            }
+            flags.insert(flagLabel)
+        }
+    }
+
+    private static func consumeOption(
+        _ definition: OptionDefinition,
+        displayName: String,
+        attachedValue: String?,
+        tokens: [Token],
+        index: inout Int) throws -> [String]
+    {
+        var consumed = attachedValue.map { [$0] } ?? []
+        switch definition.parsing {
+        case .singleValue:
+            if attachedValue != nil {
+                return consumed
+            }
+            guard index < tokens.count, case let .argument(value) = tokens[index] else {
+                throw CommanderError.missingValue(option: displayName)
+            }
+            consumed.append(value)
+            index += 1
+        case .upToNextOption:
+            while index < tokens.count, case let .argument(value) = tokens[index] {
+                consumed.append(value)
+                index += 1
+            }
+        case .remaining:
+            consumed.append(contentsOf: tokens[index...].map(\.rawValue))
+            index = tokens.endIndex
+        }
+        return consumed
+    }
 
     private static func buildOptionLookup(_ definitions: [OptionDefinition]) -> [String: OptionDefinition] {
         var lookup: [String: OptionDefinition] = [:]

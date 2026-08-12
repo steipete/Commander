@@ -116,6 +116,22 @@ public struct OptionDefinition: Sendable, Equatable {
     public let names: [CommanderName]
     public let help: String?
     public let parsing: OptionParsingStrategy
+    /// Short spellings that may carry their value in the same token, such as `-Ddebug`.
+    public let joinedShortNames: Set<Character>
+
+    public init(
+        label: String,
+        names: [CommanderName],
+        help: String? = nil,
+        parsing: OptionParsingStrategy = .singleValue,
+        joinedShortNames: Set<Character> = [])
+    {
+        self.label = label
+        self.names = names
+        self.help = help
+        self.parsing = parsing
+        self.joinedShortNames = joinedShortNames
+    }
 }
 
 /// Canonical description of a positional argument.
@@ -137,9 +153,15 @@ extension OptionDefinition {
         label: String,
         names: [CommanderName],
         help: String? = nil,
-        parsing: OptionParsingStrategy = .singleValue) -> OptionDefinition
+        parsing: OptionParsingStrategy = .singleValue,
+        joinedShortNames: Set<Character> = []) -> OptionDefinition
     {
-        OptionDefinition(label: label, names: names, help: help, parsing: parsing)
+        OptionDefinition(
+            label: label,
+            names: names,
+            help: help,
+            parsing: parsing,
+            joinedShortNames: joinedShortNames)
     }
 }
 
