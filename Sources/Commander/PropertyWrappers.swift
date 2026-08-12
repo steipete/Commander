@@ -84,6 +84,7 @@ extension Option: Sendable where Value: Sendable {}
 public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
     private var storage: Value?
     private let help: String?
+    private let hasDefaultValue: Bool
 
     /// Accesses the parsed value, trapping when the argument is mandatory and
     /// was never bound.
@@ -106,11 +107,13 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
     public init(wrappedValue: Value, help: String? = nil) {
         self.storage = wrappedValue
         self.help = help
+        self.hasDefaultValue = true
     }
 
     public init(help: String? = nil) {
         self.storage = nil
         self.help = help
+        self.hasDefaultValue = false
     }
 
     public init() {
@@ -122,7 +125,7 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
         let definition = ArgumentDefinition(
             label: resolvedLabel,
             help: help,
-            isOptional: Value.self is OptionalProtocol.Type)
+            isOptional: self.hasDefaultValue || Value.self is OptionalProtocol.Type)
         signature.append(.argument(definition))
     }
 

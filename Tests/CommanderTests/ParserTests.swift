@@ -52,6 +52,29 @@ func `errors on unexpected argument when command has no positional arguments`() 
 }
 
 @Test
+func `errors when a required positional argument is missing`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "source"),
+        .make(label: "destination", isOptional: true),
+    ])
+
+    #expect(throws: CommanderError.missingArgument("source")) {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `accepts omitted optional positional arguments`() throws {
+    let signature = CommandSignature(arguments: [
+        .make(label: "source"),
+        .make(label: "destination", isOptional: true),
+    ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["input.txt"])
+
+    #expect(parsed.positional == ["input.txt"])
+}
+
+@Test
 func `parser consumes negative numeric option values`() throws {
     let signature = CommandSignature(options: [
         .make(label: "count", names: [.long("count")]),

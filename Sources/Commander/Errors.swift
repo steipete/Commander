@@ -5,6 +5,7 @@ import Foundation
 public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable {
     case unknownOption(String)
     case missingValue(option: String)
+    case missingArgument(String)
     case unexpectedArgument(String)
     case invalidValue(option: String, value: String)
 
@@ -14,6 +15,8 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
             "Unknown option \(name)"
         case let .missingValue(option):
             "Missing value for option \(option)"
+        case let .missingArgument(label):
+            "Missing argument: \(label)"
         case let .unexpectedArgument(value):
             "Unexpected argument: \(value)"
         case let .invalidValue(option, value):
