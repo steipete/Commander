@@ -43,11 +43,14 @@ values derived from your `ParsableCommand` types.
 ```swift
 let descriptors = [Screenshot.descriptor(), Agent.descriptor()]
 let program = Program(descriptors: descriptors)
-let invocation = try program.resolve(argv: CommandLine.arguments)
+let invocation = try program.resolve(commandLine: CommandLine.arguments)
 ```
 
 An invocation contains the resolved descriptor, raw ``ParsedValues``, and the
 command path so you can print breadcrumbs or analytics.
+
+When an embedding application has already removed its executable name, use
+`resolve(arguments:)` with the remaining argument tail instead.
 
 ## Generate documentation
 

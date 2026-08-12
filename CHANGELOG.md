@@ -6,11 +6,13 @@ All notable changes to Commander will be documented in this file.
 
 ### Added
 - Accept attached long-option values such as `--output=-dash` and opt-in joined short values such as `-Ddebug`.
+- Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
 - Treat negative numeric tokens as option values instead of misclassifying them as short flags.
 - Preserve explicitly declared numeric short options and flag packs when classifying negative numeric tokens.
 - Preserve option-looking arguments byte-for-byte when an option uses the `remaining` parsing strategy.
+- Remove the Peekaboo-specific executable-name heuristic from `Program` routing.
 
 ## [0.2.4] - 2026-07-15
 

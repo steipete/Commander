@@ -134,17 +134,66 @@ func `command parser is sendable`() {
 func `program resolves command`() throws {
     let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
     let program = Program(descriptors: [descriptor])
-    let invocation = try program.resolve(argv: ["peekaboo", "demo", "Workspace"])
+    let invocation = try program.resolve(commandLine: ["/tmp/mycli", "demo", "Workspace"])
     #expect(invocation.descriptor.name == "demo")
     #expect(invocation.parsedValues.positional == ["Workspace"])
     #expect(invocation.path == ["demo"])
 }
 
 @Test
+func `program resolves an explicit argument tail`() throws {
+    let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
+    let invocation = try Program(descriptors: [descriptor]).resolve(arguments: ["demo", "Workspace"])
+
+    #expect(invocation.descriptor.name == "demo")
+    #expect(invocation.parsedValues.positional == ["Workspace"])
+}
+
+@Test
+func `program legacy argv entry point accepts generic executable names`() throws {
+    let descriptor = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
+    let program = Program(descriptors: [descriptor])
+
+    #expect(try program.resolve(argv: ["mycli", "demo", "Workspace"]).descriptor.name == "demo")
+}
+
+@Test
+func `program legacy argv entry point preserves executable root collisions`() throws {
+    let executable = CommandDescriptor(
+        name: "mycli",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature())
+    let demo = CommandDescriptor(name: "demo", abstract: "", discussion: nil, signature: signature)
+    let invocation = try Program(descriptors: [executable, demo]).resolve(argv: ["mycli", "demo", "Workspace"])
+
+    #expect(invocation.descriptor.name == "demo")
+    #expect(invocation.parsedValues.positional == ["Workspace"])
+}
+
+@Test
+func `program legacy argv entry point reports the unknown command rather than the executable`() {
+    let program = Program(descriptors: [])
+
+    #expect(throws: CommanderProgramError.unknownCommand("typo")) {
+        _ = try program.resolve(argv: ["mycli", "typo"])
+    }
+}
+
+@Test
+func `program reports a missing command for an executable-only command line`() {
+    let program = Program(descriptors: [])
+
+    #expect(throws: CommanderProgramError.missingCommand) {
+        _ = try program.resolve(commandLine: ["/tmp/mycli"])
+    }
+}
+
+@Test
 func `program detects unknown command`() {
     let program = Program(descriptors: [])
     #expect(throws: CommanderProgramError.unknownCommand("foo")) {
-        _ = try program.resolve(argv: ["foo"])
+        _ = try program.resolve(arguments: ["foo"])
     }
 }
 
