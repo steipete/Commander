@@ -35,6 +35,10 @@ Property wrappers automatically register themselves with ``CommandSignature`` vi
 reflection, so the parser knows which flags, options, or positional arguments to
 expect.
 
+``CommandParser`` flattens nested ``OptionGroup`` signatures automatically. Direct
+parser callers can pass `CommandSignature.describe(command)` without separately
+normalizing reusable groups first.
+
 ## Route subcommands
 
 Aggregate commands by constructing a ``Program`` with ``CommandDescriptor``
