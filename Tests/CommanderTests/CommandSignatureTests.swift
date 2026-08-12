@@ -1,9 +1,15 @@
 import Commander
 import Testing
 
+private struct OutputOptions: CommanderParsable, Sendable {
+    @Option(help: "Output format") var format: String?
+    init() {}
+}
+
 private struct RuntimeOptions: CommanderParsable, Sendable {
     @Flag(name: .shortAndLong, help: "Verbose logging") var verbose = false
     @Option(help: "JSON output path") var json: String?
+    @OptionGroup var output: OutputOptions
     init() {}
 }
 
@@ -50,8 +56,11 @@ func `collects command signature`() throws {
 }
 
 @Test
-func `command parser automatically flattens option groups`() throws {
+func `command parser recursively flattens nested option groups`() throws {
     let signature = CommandSignature.describe(SampleCommand())
+    let runtimeSignature = try #require(signature.optionGroups.first)
+    #expect(runtimeSignature.optionGroups.count == 1)
+
     let parsed = try CommandParser(signature: signature).parse(arguments: [
         "Workspace",
         "--app",
@@ -59,11 +68,14 @@ func `command parser automatically flattens option groups`() throws {
         "--verbose",
         "--json",
         "result.json",
+        "--format",
+        "json",
     ])
 
     #expect(parsed.positional == ["Workspace"])
     #expect(parsed.options["app"] == ["Safari"])
     #expect(parsed.options["json"] == ["result.json"])
+    #expect(parsed.options["format"] == ["json"])
     #expect(parsed.flags == ["verbose"])
 }
 
