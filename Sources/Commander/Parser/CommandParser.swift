@@ -32,10 +32,7 @@ public struct CommandParser: Sendable {
     /// - Throws: ``CommanderError`` when the arguments do not satisfy the
     ///   signature (unknown option, missing value, etc.).
     public func parse(arguments: [String]) throws -> ParsedValues {
-        try self.validateArgumentDefinitions()
-        let nameLookups = try Self.buildNameLookups(
-            options: self.signature.options,
-            flags: self.signature.flags)
+        let nameLookups = try CommandSignatureIndex(validating: self.signature)
         let joinedOptionShortNames = Set(self.signature.options.flatMap(\.joinedShortNames))
         let tokens = CommandLineTokenizer.tokenize(
             arguments,
@@ -106,52 +103,6 @@ public struct CommandParser: Sendable {
         let optionLookup: [CommandNameKey: OptionDefinition]
         let flagLookup: [CommandNameKey: String]
         let tokens: [Token]
-    }
-
-    private struct NameLookups {
-        let options: [CommandNameKey: OptionDefinition]
-        let flags: [CommandNameKey: String]
-        let optionShortNames: Set<Character>
-        let flagShortNames: Set<Character>
-    }
-
-    private enum CommandNameKey: Hashable {
-        case long(String)
-        case short(Character)
-
-        init(_ name: CommanderName) {
-            switch name {
-            case let .long(value), let .aliasLong(value):
-                self = .long(value)
-            case let .short(value), let .aliasShort(value):
-                self = .short(value)
-            }
-        }
-
-        var spelling: String {
-            switch self {
-            case let .long(value):
-                "--\(value)"
-            case let .short(value):
-                "-\(value)"
-            }
-        }
-
-        var shortComponent: Character? {
-            if case let .short(value) = self {
-                return value
-            }
-            return nil
-        }
-    }
-
-    private func validateArgumentDefinitions() throws {
-        guard let variadicIndex = self.signature.arguments.firstIndex(where: { $0.parsing == .remaining }) else {
-            return
-        }
-        guard variadicIndex == self.signature.arguments.index(before: self.signature.arguments.endIndex) else {
-            throw CommanderError.invalidArgumentOrder(self.signature.arguments[variadicIndex].label)
-        }
     }
 
     private func validate(positional: [String]) throws {
@@ -246,50 +197,5 @@ public struct CommandParser: Sendable {
             index = tokens.endIndex
         }
         return consumed
-    }
-
-    private static func buildNameLookups(
-        options: [OptionDefinition],
-        flags: [FlagDefinition]) throws -> NameLookups
-    {
-        var optionLookup: [CommandNameKey: OptionDefinition] = [:]
-        for definition in options {
-            for name in definition.names {
-                let key = CommandNameKey(name)
-                if let existing = optionLookup[key] {
-                    throw CommanderError.duplicateOptionName(
-                        spelling: key.spelling,
-                        firstLabel: existing.label,
-                        duplicateLabel: definition.label)
-                }
-                optionLookup[key] = definition
-            }
-        }
-
-        var flagLookup: [CommandNameKey: String] = [:]
-        for definition in flags {
-            for name in definition.names {
-                let key = CommandNameKey(name)
-                if let existingLabel = flagLookup[key] {
-                    throw CommanderError.duplicateFlagName(
-                        spelling: key.spelling,
-                        firstLabel: existingLabel,
-                        duplicateLabel: definition.label)
-                }
-                if let option = optionLookup[key] {
-                    throw CommanderError.conflictingName(
-                        spelling: key.spelling,
-                        optionLabel: option.label,
-                        flagLabel: definition.label)
-                }
-                flagLookup[key] = definition.label
-            }
-        }
-
-        return NameLookups(
-            options: optionLookup,
-            flags: flagLookup,
-            optionShortNames: Set(optionLookup.keys.compactMap(\.shortComponent)),
-            flagShortNames: Set(flagLookup.keys.compactMap(\.shortComponent)))
     }
 }

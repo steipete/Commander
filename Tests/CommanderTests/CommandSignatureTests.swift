@@ -101,3 +101,19 @@ func `collects remaining argument metadata`() throws {
 
     #expect(argument.parsing == .remaining)
 }
+
+@Test
+func `signature validation does not require invocation arguments`() {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.long("output")]),
+        .make(label: "legacyOutput", names: [.aliasLong("output")]),
+    ])
+
+    #expect(throws: CommanderError.duplicateOptionName(
+        spelling: "--output",
+        firstLabel: "output",
+        duplicateLabel: "legacyOutput"))
+    {
+        try signature.validate()
+    }
+}

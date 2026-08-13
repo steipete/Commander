@@ -47,6 +47,8 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
     case unknownCommand(String)
     case duplicateCommand(String)
     case duplicateSubcommand(command: String, name: String)
+    case invalidDefaultSubcommand(command: String, name: String)
+    case invalidCommandSignature(command: String, error: CommanderError)
     case missingSubcommand(command: String)
     case unknownSubcommand(command: String, name: String)
     case parsingError(CommanderError)
@@ -61,6 +63,10 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
             "Duplicate root command '\(name)'"
         case let .duplicateSubcommand(command, name):
             "Duplicate subcommand '\(name)' for command '\(command)'"
+        case let .invalidDefaultSubcommand(command, name):
+            "Default subcommand '\(name)' is not registered for command '\(command)'"
+        case let .invalidCommandSignature(command, error):
+            "Invalid signature for command '\(command)': \(error.description)"
         case let .missingSubcommand(command):
             "Command '\(command)' requires a subcommand"
         case let .unknownSubcommand(command, name):
@@ -91,7 +97,7 @@ public struct Program: Sendable {
         self.configurationError = if let duplicateName {
             .duplicateCommand(duplicateName)
         } else {
-            descriptors.lazy.compactMap { Self.duplicateSubcommandError(in: $0, path: [$0.name]) }.first
+            descriptors.lazy.compactMap { Self.configurationError(in: $0, path: [$0.name]) }.first
         }
     }
 
@@ -147,7 +153,7 @@ public struct Program: Sendable {
         }
     }
 
-    private static func duplicateSubcommandError(
+    private static func configurationError(
         in descriptor: CommandDescriptor,
         path: [String]) -> CommanderProgramError?
     {
@@ -157,8 +163,19 @@ public struct Program: Sendable {
                 return .duplicateSubcommand(command: path.joined(separator: " "), name: child.name)
             }
         }
+
+        do {
+            try descriptor.signature.validate()
+        } catch {
+            return .invalidCommandSignature(command: path.joined(separator: " "), error: error)
+        }
+
+        if let defaultName = descriptor.defaultSubcommandName, !names.contains(defaultName) {
+            return .invalidDefaultSubcommand(command: path.joined(separator: " "), name: defaultName)
+        }
+
         for child in descriptor.subcommands {
-            if let error = Self.duplicateSubcommandError(in: child, path: path + [child.name]) {
+            if let error = Self.configurationError(in: child, path: path + [child.name]) {
                 return error
             }
         }

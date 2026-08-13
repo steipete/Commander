@@ -394,6 +394,50 @@ func `program rejects duplicate nested subcommand names deterministically`() {
 }
 
 @Test
+func `program rejects an invalid inactive command signature`() {
+    let valid = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let invalid = CommandDescriptor(
+        name: "run",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(flags: [
+            .make(label: "verbose", names: [.short("v")]),
+            .make(label: "trace", names: [.aliasShort("v")]),
+        ]))
+    let jobs = CommandDescriptor(
+        name: "jobs",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [invalid])
+    let program = Program(descriptors: [valid, jobs])
+    let expected = CommanderProgramError.invalidCommandSignature(
+        command: "jobs run",
+        error: .duplicateFlagName(spelling: "-v", firstLabel: "verbose", duplicateLabel: "trace"))
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["version"])
+    }
+}
+
+@Test
+func `program rejects an unregistered default subcommand`() {
+    let apps = CommandDescriptor(name: "apps", abstract: "", discussion: nil, signature: CommandSignature())
+    let list = CommandDescriptor(
+        name: "list",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [apps],
+        defaultSubcommandName: "windows")
+    let program = Program(descriptors: [list])
+
+    #expect(throws: CommanderProgramError.invalidDefaultSubcommand(command: "list", name: "windows")) {
+        _ = try program.resolve(arguments: ["list"])
+    }
+}
+
+@Test
 func `program resolves nested subcommand`() throws {
     let child = CommandDescriptor(name: "windows", abstract: "", discussion: nil, signature: signature)
     let parent = CommandDescriptor(
