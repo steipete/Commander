@@ -23,7 +23,7 @@ func `parses options flags and arguments`() throws {
         "--include",
         "a",
         "b",
-        "--",
+        "--rest",
         "tail1",
         "tail2",
     ])
@@ -33,6 +33,18 @@ func `parses options flags and arguments`() throws {
     #expect(values.options["includes"] == ["a", "b"])
     #expect(values.options["rest"] == ["tail1", "tail2"])
     #expect(values.positional == ["Project"])
+}
+
+@Test
+func `terminator does not activate an unselected remaining option`() throws {
+    let signature = CommandSignature(
+        arguments: [.make(label: "values", isOptional: true, parsing: .remaining)],
+        options: [.make(label: "rest", names: [.long("rest")], parsing: .remaining)])
+
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["--", "tail"])
+
+    #expect(parsed.positional == ["tail"])
+    #expect(parsed.options["rest"] == nil)
 }
 
 @Test
