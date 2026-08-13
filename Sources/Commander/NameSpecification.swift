@@ -9,24 +9,6 @@ public enum CommanderName: Equatable, Sendable {
 }
 
 extension CommanderName {
-    var longComponent: String? {
-        switch self {
-        case let .long(value), let .aliasLong(value):
-            value
-        default:
-            nil
-        }
-    }
-
-    var shortComponent: Character? {
-        switch self {
-        case let .short(value), let .aliasShort(value):
-            value
-        default:
-            nil
-        }
-    }
-
     public var isAlias: Bool {
         switch self {
         case .aliasShort, .aliasLong:

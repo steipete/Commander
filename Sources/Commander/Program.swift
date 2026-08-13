@@ -45,6 +45,8 @@ public struct CommandInvocation: Sendable {
 public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equatable {
     case missingCommand
     case unknownCommand(String)
+    case duplicateCommand(String)
+    case duplicateSubcommand(command: String, name: String)
     case missingSubcommand(command: String)
     case unknownSubcommand(command: String, name: String)
     case parsingError(CommanderError)
@@ -55,6 +57,10 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
             "No command specified"
         case let .unknownCommand(name):
             "Unknown command '\(name)'"
+        case let .duplicateCommand(name):
+            "Duplicate root command '\(name)'"
+        case let .duplicateSubcommand(command, name):
+            "Duplicate subcommand '\(name)' for command '\(command)'"
         case let .missingSubcommand(command):
             "Command '\(command)' requires a subcommand"
         case let .unknownSubcommand(command, name):
@@ -68,10 +74,25 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
 /// Resolves `CommandLine.arguments` into concrete commands using descriptors.
 public struct Program: Sendable {
     private let descriptorLookup: [String: CommandDescriptor]
+    private let configurationError: CommanderProgramError?
 
     /// Creates a router for the provided command descriptors.
     public init(descriptors: [CommandDescriptor]) {
-        self.descriptorLookup = Dictionary(uniqueKeysWithValues: descriptors.map { ($0.name, $0) })
+        var lookup: [String: CommandDescriptor] = [:]
+        var duplicateName: String?
+        for descriptor in descriptors {
+            if lookup[descriptor.name] != nil {
+                duplicateName = duplicateName ?? descriptor.name
+            } else {
+                lookup[descriptor.name] = descriptor
+            }
+        }
+        self.descriptorLookup = lookup
+        self.configurationError = if let duplicateName {
+            .duplicateCommand(duplicateName)
+        } else {
+            descriptors.lazy.compactMap { Self.duplicateSubcommandError(in: $0, path: [$0.name]) }.first
+        }
     }
 
     /// Resolves a complete process command line, including its executable at
@@ -82,6 +103,7 @@ public struct Program: Sendable {
     /// - Throws: ``CommanderProgramError`` when the path or arguments are
     ///   invalid.
     public func resolve(commandLine: [String]) throws -> CommandInvocation {
+        try self.validateConfiguration()
         guard !commandLine.isEmpty else {
             throw CommanderProgramError.missingCommand
         }
@@ -91,6 +113,7 @@ public struct Program: Sendable {
     /// Walks the command tree from an argument tail whose first token is the
     /// root command.
     public func resolve(arguments: [String]) throws -> CommandInvocation {
+        try self.validateConfiguration()
         var args = arguments
         guard let commandName = args.first else {
             throw CommanderProgramError.missingCommand
@@ -116,6 +139,30 @@ public struct Program: Sendable {
     /// name that matches a root command should be removed.
     public func resolve(argv: [String]) throws -> CommandInvocation {
         try self.resolve(commandLine: argv)
+    }
+
+    private func validateConfiguration() throws {
+        if let configurationError {
+            throw configurationError
+        }
+    }
+
+    private static func duplicateSubcommandError(
+        in descriptor: CommandDescriptor,
+        path: [String]) -> CommanderProgramError?
+    {
+        var names: Set<String> = []
+        for child in descriptor.subcommands {
+            guard names.insert(child.name).inserted else {
+                return .duplicateSubcommand(command: path.joined(separator: " "), name: child.name)
+            }
+        }
+        for child in descriptor.subcommands {
+            if let error = Self.duplicateSubcommandError(in: child, path: path + [child.name]) {
+                return error
+            }
+        }
+        return nil
     }
 
     private func resolveDescriptor(

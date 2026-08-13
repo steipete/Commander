@@ -33,19 +33,18 @@ public struct CommandParser: Sendable {
     ///   signature (unknown option, missing value, etc.).
     public func parse(arguments: [String]) throws -> ParsedValues {
         try self.validateArgumentDefinitions()
-        let optionLookup = Self.buildOptionLookup(self.signature.options)
-        let flagLookup = Self.buildFlagLookup(self.signature.flags)
-        let optionShortNames = Set(self.signature.options.flatMap(\.names).compactMap(\.shortComponent))
+        let nameLookups = try Self.buildNameLookups(
+            options: self.signature.options,
+            flags: self.signature.flags)
         let joinedOptionShortNames = Set(self.signature.options.flatMap(\.joinedShortNames))
-        let flagShortNames = Set(self.signature.flags.flatMap(\.names).compactMap(\.shortComponent))
         let tokens = CommandLineTokenizer.tokenize(
             arguments,
-            optionShortNames: optionShortNames,
+            optionShortNames: nameLookups.optionShortNames,
             joinedOptionShortNames: joinedOptionShortNames,
-            flagShortNames: flagShortNames)
+            flagShortNames: nameLookups.flagShortNames)
         let shortTokenContext = ShortTokenContext(
-            optionLookup: optionLookup,
-            flagLookup: flagLookup,
+            optionLookup: nameLookups.options,
+            flagLookup: nameLookups.flags,
             tokens: tokens)
         var positional: [String] = []
         var options: [String: [String]] = [:]
@@ -59,7 +58,8 @@ public struct CommandParser: Sendable {
             index += 1
             switch token {
             case let .option(name, attachedValue):
-                if let definition = optionLookup[name] {
+                let nameKey = CommandNameKey.long(name)
+                if let definition = nameLookups.options[nameKey] {
                     let consumed = try Self.consumeOption(
                         definition,
                         displayName: "--\(name)",
@@ -67,7 +67,7 @@ public struct CommandParser: Sendable {
                         tokens: tokens,
                         index: &index)
                     options[definition.label, default: []].append(contentsOf: consumed)
-                } else if attachedValue == nil, let flagLabel = flagLookup[name] {
+                } else if attachedValue == nil, let flagLabel = nameLookups.flags[nameKey] {
                     flags.insert(flagLabel)
                 } else {
                     throw CommanderError.unknownOption(token.rawValue)
@@ -103,9 +103,46 @@ public struct CommandParser: Sendable {
     // swiftlint:enable function_body_length
 
     private struct ShortTokenContext {
-        let optionLookup: [String: OptionDefinition]
-        let flagLookup: [String: String]
+        let optionLookup: [CommandNameKey: OptionDefinition]
+        let flagLookup: [CommandNameKey: String]
         let tokens: [Token]
+    }
+
+    private struct NameLookups {
+        let options: [CommandNameKey: OptionDefinition]
+        let flags: [CommandNameKey: String]
+        let optionShortNames: Set<Character>
+        let flagShortNames: Set<Character>
+    }
+
+    private enum CommandNameKey: Hashable {
+        case long(String)
+        case short(Character)
+
+        init(_ name: CommanderName) {
+            switch name {
+            case let .long(value), let .aliasLong(value):
+                self = .long(value)
+            case let .short(value), let .aliasShort(value):
+                self = .short(value)
+            }
+        }
+
+        var spelling: String {
+            switch self {
+            case let .long(value):
+                "--\(value)"
+            case let .short(value):
+                "-\(value)"
+            }
+        }
+
+        var shortComponent: Character? {
+            if case let .short(value) = self {
+                return value
+            }
+            return nil
+        }
     }
 
     private func validateArgumentDefinitions() throws {
@@ -139,26 +176,26 @@ public struct CommandParser: Sendable {
         guard let firstName = body.first else {
             throw CommanderError.unknownOption("-")
         }
+        let firstNameKey = CommandNameKey.short(firstName)
 
         if body.count == 1 {
-            let name = String(firstName)
-            if let definition = context.optionLookup[name] {
+            if let definition = context.optionLookup[firstNameKey] {
                 let consumed = try Self.consumeOption(
                     definition,
-                    displayName: "-\(name)",
+                    displayName: "-\(firstName)",
                     attachedValue: nil,
                     tokens: context.tokens,
                     index: &index)
                 options[definition.label, default: []].append(contentsOf: consumed)
-            } else if let flagLabel = context.flagLookup[name] {
+            } else if let flagLabel = context.flagLookup[firstNameKey] {
                 flags.insert(flagLabel)
             } else {
-                throw CommanderError.unknownOption("-\(name)")
+                throw CommanderError.unknownOption("-\(firstName)")
             }
             return
         }
 
-        if let definition = context.optionLookup[String(firstName)], definition.joinedShortNames.contains(firstName) {
+        if let definition = context.optionLookup[firstNameKey], definition.joinedShortNames.contains(firstName) {
             var attachedValue = String(body.dropFirst())
             if attachedValue.first == "=" {
                 attachedValue.removeFirst()
@@ -174,7 +211,7 @@ public struct CommandParser: Sendable {
         }
 
         for name in body {
-            guard let flagLabel = context.flagLookup[String(name)] else {
+            guard let flagLabel = context.flagLookup[.short(name)] else {
                 throw CommanderError.unknownOption("-\(name)")
             }
             flags.insert(flagLabel)
@@ -211,31 +248,48 @@ public struct CommandParser: Sendable {
         return consumed
     }
 
-    private static func buildOptionLookup(_ definitions: [OptionDefinition]) -> [String: OptionDefinition] {
-        var lookup: [String: OptionDefinition] = [:]
-        for definition in definitions {
+    private static func buildNameLookups(
+        options: [OptionDefinition],
+        flags: [FlagDefinition]) throws -> NameLookups
+    {
+        var optionLookup: [CommandNameKey: OptionDefinition] = [:]
+        for definition in options {
             for name in definition.names {
-                if let longName = name.longComponent {
-                    lookup[longName] = definition
-                } else if let shortName = name.shortComponent {
-                    lookup[String(shortName)] = definition
+                let key = CommandNameKey(name)
+                if let existing = optionLookup[key] {
+                    throw CommanderError.duplicateOptionName(
+                        spelling: key.spelling,
+                        firstLabel: existing.label,
+                        duplicateLabel: definition.label)
                 }
+                optionLookup[key] = definition
             }
         }
-        return lookup
-    }
 
-    private static func buildFlagLookup(_ definitions: [FlagDefinition]) -> [String: String] {
-        var lookup: [String: String] = [:]
-        for definition in definitions {
+        var flagLookup: [CommandNameKey: String] = [:]
+        for definition in flags {
             for name in definition.names {
-                if let longName = name.longComponent {
-                    lookup[longName] = definition.label
-                } else if let shortName = name.shortComponent {
-                    lookup[String(shortName)] = definition.label
+                let key = CommandNameKey(name)
+                if let existingLabel = flagLookup[key] {
+                    throw CommanderError.duplicateFlagName(
+                        spelling: key.spelling,
+                        firstLabel: existingLabel,
+                        duplicateLabel: definition.label)
                 }
+                if let option = optionLookup[key] {
+                    throw CommanderError.conflictingName(
+                        spelling: key.spelling,
+                        optionLabel: option.label,
+                        flagLabel: definition.label)
+                }
+                flagLookup[key] = definition.label
             }
         }
-        return lookup
+
+        return NameLookups(
+            options: optionLookup,
+            flags: flagLookup,
+            optionShortNames: Set(optionLookup.keys.compactMap(\.shortComponent)),
+            flagShortNames: Set(flagLookup.keys.compactMap(\.shortComponent)))
     }
 }

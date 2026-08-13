@@ -44,6 +44,73 @@ func `errors on unknown option`() {
 }
 
 @Test
+func `parser rejects duplicate option spellings deterministically`() {
+    let signature = CommandSignature(options: [
+        .make(label: "primaryOutput", names: [.long("output")]),
+        .make(label: "legacyOutput", names: [.aliasLong("output")]),
+    ])
+    let expected = CommanderError.duplicateOptionName(
+        spelling: "--output",
+        firstLabel: "primaryOutput",
+        duplicateLabel: "legacyOutput")
+
+    #expect(throws: expected) {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+    #expect(expected.description == "Duplicate option spelling --output for 'primaryOutput' and 'legacyOutput'")
+}
+
+@Test
+func `parser rejects duplicate flag spellings deterministically`() {
+    let signature = CommandSignature(flags: [
+        .make(label: "verbose", names: [.short("v")]),
+        .make(label: "trace", names: [.aliasShort("v")]),
+    ])
+
+    #expect(throws: CommanderError.duplicateFlagName(
+        spelling: "-v",
+        firstLabel: "verbose",
+        duplicateLabel: "trace"))
+    {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `parser rejects option flag spelling collisions`() {
+    let signature = CommandSignature(
+        options: [
+            .make(label: "output", names: [.long("output")]),
+        ],
+        flags: [
+            .make(label: "printOutput", names: [.aliasLong("output")]),
+        ])
+
+    #expect(throws: CommanderError.conflictingName(
+        spelling: "--output",
+        optionLabel: "output",
+        flagLabel: "printOutput"))
+    {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `parser keeps distinct short and long spellings with the same component`() throws {
+    let signature = CommandSignature(
+        options: [
+            .make(label: "longX", names: [.long("x")]),
+        ],
+        flags: [
+            .make(label: "shortX", names: [.short("x")]),
+        ])
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["--x", "value", "-x"])
+
+    #expect(parsed.options["longX"] == ["value"])
+    #expect(parsed.flags == ["shortX"])
+}
+
+@Test
 func `errors on unexpected argument when command has no positional arguments`() {
     let parser = CommandParser(signature: CommandSignature())
     #expect(throws: CommanderError.unexpectedArgument("extra")) {
@@ -280,6 +347,50 @@ func `program detects unknown command`() {
     #expect(throws: CommanderProgramError.unknownCommand("foo")) {
         _ = try program.resolve(arguments: ["foo"])
     }
+}
+
+@Test
+func `program rejects duplicate root command names without trapping`() {
+    let first = CommandDescriptor(name: "demo", abstract: "First", discussion: nil, signature: CommandSignature())
+    let duplicate = CommandDescriptor(
+        name: "demo",
+        abstract: "Duplicate",
+        discussion: nil,
+        signature: CommandSignature())
+    let program = Program(descriptors: [first, duplicate])
+
+    #expect(throws: CommanderProgramError.duplicateCommand("demo")) {
+        _ = try program.resolve(arguments: ["demo"])
+    }
+}
+
+@Test
+func `program rejects duplicate nested subcommand names deterministically`() {
+    let leaf = CommandDescriptor(name: "run", abstract: "First", discussion: nil, signature: CommandSignature())
+    let duplicate = CommandDescriptor(
+        name: "run",
+        abstract: "Duplicate",
+        discussion: nil,
+        signature: CommandSignature())
+    let nested = CommandDescriptor(
+        name: "jobs",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [leaf, duplicate])
+    let root = CommandDescriptor(
+        name: "admin",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [nested])
+    let program = Program(descriptors: [root])
+
+    let expected = CommanderProgramError.duplicateSubcommand(command: "admin jobs", name: "run")
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["admin", "jobs", "run"])
+    }
+    #expect(expected.description == "Duplicate subcommand 'run' for command 'admin jobs'")
 }
 
 @Test
