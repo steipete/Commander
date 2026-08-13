@@ -16,6 +16,7 @@ All notable changes to Commander will be documented in this file.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
+- Keep tokens after a bare `--` positional instead of routing them into an unselected `remaining` option.
 - Validate every registered command signature and default-subcommand target before resolving any path so malformed inactive commands fail closed.
 - Reject duplicate semantic labels within each argument, option, or flag category while preserving multiple aliases declared on one definition.
 - Reject required positional arguments declared after optional ones, which cannot be bound unambiguously by position.

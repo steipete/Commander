@@ -21,7 +21,6 @@ public struct CommandParser: Sendable {
         self.signature = signature.flattened()
     }
 
-    // swiftlint:disable function_body_length
     /// Tokenizes the supplied arguments and groups them into positional
     /// values, options, and flags.
     ///
@@ -46,8 +45,6 @@ public struct CommandParser: Sendable {
         var positional: [String] = []
         var options: [String: [String]] = [:]
         var flags = Set<String>()
-
-        let remainingOption = self.signature.options.first(where: { $0.parsing == .remaining })
 
         var index = 0
         while index < tokens.count {
@@ -79,16 +76,8 @@ public struct CommandParser: Sendable {
             case let .argument(value):
                 positional.append(value)
             case .terminator:
-                if let remainingOption {
-                    let tail = tokens[index...].map(\.rawValue)
-                    index = tokens.endIndex
-                    if !tail.isEmpty {
-                        options[remainingOption.label, default: []].append(contentsOf: tail)
-                    }
-                } else {
-                    positional.append(contentsOf: tokens[index...].map(\.rawValue))
-                    index = tokens.endIndex
-                }
+                positional.append(contentsOf: tokens[index...].map(\.rawValue))
+                index = tokens.endIndex
             }
         }
 
@@ -96,8 +85,6 @@ public struct CommandParser: Sendable {
 
         return ParsedValues(positional: positional, options: options, flags: flags)
     }
-
-    // swiftlint:enable function_body_length
 
     private struct ShortTokenContext {
         let optionLookup: [CommandNameKey: OptionDefinition]
