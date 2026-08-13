@@ -17,6 +17,7 @@ All notable changes to Commander will be documented in this file.
 
 ### Fixed
 - Keep tokens after a bare `--` positional instead of routing them into an unselected `remaining` option.
+- Require sendable command metatypes instead of sendable command instances on Swift 6.2+, avoiding retroactive `Sendable` diagnostics when a command adopts `ParsableCommand` in another source file.
 - Validate every registered command signature and default-subcommand target before resolving any path so malformed inactive commands fail closed.
 - Reject duplicate semantic labels within each argument, option, or flag category while preserving multiple aliases declared on one definition.
 - Reject required positional arguments declared after optional ones, which cannot be bound unambiguously by position.

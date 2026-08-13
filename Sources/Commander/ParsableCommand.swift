@@ -51,6 +51,18 @@ public enum MainActorCommandDescription {
     }
 }
 
+#if compiler(>=6.2)
+/// Protocol every Commander command adopts. Provide metadata via
+/// ``commandDescription`` and implement ``run()`` to perform the command's
+/// work. Command metatypes can cross isolation domains, while mutable command
+/// instances remain on the main actor.
+@MainActor
+public protocol ParsableCommand: SendableMetatype {
+    init()
+    static var commandDescription: CommandDescription { get }
+    mutating func run() async throws
+}
+#else
 /// Protocol every Commander command adopts. Provide metadata via
 /// ``commandDescription`` and implement ``run()`` to perform the command's
 /// work.
@@ -60,6 +72,7 @@ public protocol ParsableCommand: Sendable {
     static var commandDescription: CommandDescription { get }
     mutating func run() async throws
 }
+#endif
 
 extension ParsableCommand {
     public static var commandDescription: CommandDescription {
