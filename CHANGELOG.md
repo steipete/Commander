@@ -18,6 +18,7 @@ All notable changes to Commander will be documented in this file.
 
 ### Fixed
 - Reject option definitions whose names are empty, unreachable, or inconsistent with their joined-short metadata.
+- Record option requiredness in command signatures and reject omitted or valueless non-optional, non-defaulted options before command code can access an unbound wrapper.
 - Keep tokens after a bare `--` positional instead of routing them into an unselected `remaining` option.
 - Require sendable command metatypes instead of sendable command instances on Swift 6.2+, avoiding retroactive `Sendable` diagnostics when a command adopts `ParsableCommand` in another source file.
 - Validate every registered command signature and default-subcommand target before resolving any path so malformed inactive commands fail closed.

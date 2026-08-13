@@ -35,6 +35,11 @@ Property wrappers automatically register themselves with ``CommandSignature`` vi
 reflection, so the parser knows which flags, options, or positional arguments to
 expect.
 
+A non-optional `@Option` without a default value is required. Use an optional value
+or provide a default when callers may omit the option; Commander records that
+distinction in ``OptionDefinition/isOptional`` and rejects missing required options
+before command code can access an unbound wrapper.
+
 ``CommandParser`` flattens nested ``OptionGroup`` signatures automatically. Direct
 parser callers can pass `CommandSignature.describe(command)` without separately
 normalizing reusable groups first.
