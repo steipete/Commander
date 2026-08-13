@@ -4,6 +4,12 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+### Highlights
+- Command routing and argument parsing now fail closed on ambiguous definitions and malformed invocations instead of silently choosing or ignoring input.
+
+### Breaking
+- `CommanderError` and `CommanderProgramError` gained validation cases; downstream exhaustive switches must handle the new failures.
+
 ### Added
 - Accept attached long-option values such as `--output=-dash` and opt-in joined short values such as `-Ddebug`.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
