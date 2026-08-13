@@ -153,7 +153,7 @@ let jsonFlag = FlagDefinition.make(
 )
 ```
 
-`aliasLong` / `aliasShort` behave exactly like the regular cases during parsing, but Commander omits them from generated help text and metadata exports so your CLI docs stay concise.
+`aliasLong` / `aliasShort` behave exactly like the regular cases during parsing, but Commander omits them from generated help text and metadata exports so your CLI docs stay concise. Keep every compatibility spelling on the same definition: separate argument, option, or flag definitions must have unique semantic labels, including definitions flattened from option groups.
 
 `OptionParsingStrategy` mirrors the most common CLI behaviors:
 
@@ -161,9 +161,7 @@ let jsonFlag = FlagDefinition.make(
 - `upToNextOption`: consume all values until the next option/flag (perfect for `--include foo bar`).
 - `remaining`: consume every raw token after the option, including option-looking values and `--`.
 
-Positional arguments consume one token by default. The final positional can opt into
-`@Argument(parsing: .remaining)` when a command intentionally accepts multiple values; all other commands reject trailing
-arguments instead of silently ignoring them.
+Positional arguments consume one token by default. Declare every required positional before the first optional positional so omitted values remain unambiguous. The final positional can opt into `@Argument(parsing: .remaining)` when a command intentionally accepts multiple values; all other commands reject trailing arguments instead of silently ignoring them.
 
 Long options accept attached values such as `--output=-dash`. Short options only accept joined values when they opt in
 explicitly, for example `@Option(name: .customShort("D", allowingJoined: true)) var define: String?` accepts `-Ddebug`.
