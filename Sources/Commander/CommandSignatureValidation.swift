@@ -4,7 +4,8 @@ extension CommandSignature {
     /// Validates the complete flattened signature without parsing arguments.
     ///
     /// Use this when registering commands or generating metadata so malformed
-    /// definitions fail before a particular command happens to be invoked.
+    /// definitions, duplicate semantic labels, and ambiguous positional ordering
+    /// fail before a particular command happens to be invoked.
     public func validate() throws(CommanderError) {
         _ = try CommandSignatureIndex(validating: self.flattened())
     }
@@ -17,14 +18,14 @@ struct CommandSignatureIndex: Sendable {
     let flagShortNames: Set<Character>
 
     init(validating signature: CommandSignature) throws(CommanderError) {
-        if let variadicIndex = signature.arguments.firstIndex(where: { $0.parsing == .remaining }),
-           variadicIndex != signature.arguments.index(before: signature.arguments.endIndex)
-        {
-            throw CommanderError.invalidArgumentOrder(signature.arguments[variadicIndex].label)
-        }
+        try Self.validateArguments(signature.arguments)
 
         var optionLookup: [CommandNameKey: OptionDefinition] = [:]
+        var optionLabels: Set<String> = []
         for definition in signature.options {
+            guard optionLabels.insert(definition.label).inserted else {
+                throw CommanderError.duplicateOptionLabel(definition.label)
+            }
             for name in definition.names {
                 let key = CommandNameKey(name)
                 if let existing = optionLookup[key] {
@@ -38,7 +39,11 @@ struct CommandSignatureIndex: Sendable {
         }
 
         var flagLookup: [CommandNameKey: String] = [:]
+        var flagLabels: Set<String> = []
         for definition in signature.flags {
+            guard flagLabels.insert(definition.label).inserted else {
+                throw CommanderError.duplicateFlagLabel(definition.label)
+            }
             for name in definition.names {
                 let key = CommandNameKey(name)
                 if let existingLabel = flagLookup[key] {
@@ -61,6 +66,29 @@ struct CommandSignatureIndex: Sendable {
         self.flags = flagLookup
         self.optionShortNames = Set(optionLookup.keys.compactMap(\.shortComponent))
         self.flagShortNames = Set(flagLookup.keys.compactMap(\.shortComponent))
+    }
+
+    private static func validateArguments(_ arguments: [ArgumentDefinition]) throws(CommanderError) {
+        if let variadicIndex = arguments.firstIndex(where: { $0.parsing == .remaining }),
+           variadicIndex != arguments.index(before: arguments.endIndex)
+        {
+            throw CommanderError.invalidArgumentOrder(arguments[variadicIndex].label)
+        }
+
+        var labels: Set<String> = []
+        var firstOptionalLabel: String?
+        for definition in arguments {
+            guard labels.insert(definition.label).inserted else {
+                throw CommanderError.duplicateArgumentLabel(definition.label)
+            }
+            if definition.isOptional {
+                firstOptionalLabel = firstOptionalLabel ?? definition.label
+            } else if let firstOptionalLabel {
+                throw CommanderError.requiredArgumentAfterOptional(
+                    optionalLabel: firstOptionalLabel,
+                    requiredLabel: definition.label)
+            }
+        }
     }
 }
 

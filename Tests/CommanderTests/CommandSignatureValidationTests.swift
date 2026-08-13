@@ -1,0 +1,122 @@
+import Commander
+import Testing
+
+@Test
+func `validation rejects duplicate argument labels`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "target"),
+        .make(label: "target", isOptional: true),
+    ])
+
+    #expect(throws: CommanderError.duplicateArgumentLabel("target")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects duplicate option labels across distinct spellings`() {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.long("output")]),
+        .make(label: "output", names: [.long("destination")]),
+    ])
+
+    #expect(throws: CommanderError.duplicateOptionLabel("output")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects duplicate flag labels across distinct spellings`() {
+    let signature = CommandSignature(flags: [
+        .make(label: "verbose", names: [.long("verbose")]),
+        .make(label: "verbose", names: [.long("chatty")]),
+    ])
+
+    #expect(throws: CommanderError.duplicateFlagLabel("verbose")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects duplicate labels flattened from nested groups`() {
+    let signature = CommandSignature(
+        options: [
+            .make(label: "output", names: [.long("output")]),
+        ],
+        optionGroups: [
+            CommandSignature(optionGroups: [
+                CommandSignature(options: [
+                    .make(label: "output", names: [.long("destination")]),
+                ]),
+            ]),
+        ])
+
+    #expect(throws: CommanderError.duplicateOptionLabel("output")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `aliases on one definition preserve one semantic label`() throws {
+    let signature = CommandSignature(
+        options: [
+            .make(label: "output", names: [.long("output"), .aliasLong("destination")]),
+        ],
+        flags: [
+            .make(label: "verbose", names: [.long("verbose"), .aliasLong("chatty")]),
+        ])
+
+    try signature.validate()
+    let parsed = try CommandParser(signature: signature).parse(arguments: [
+        "--output",
+        "first",
+        "--destination",
+        "second",
+        "--verbose",
+        "--chatty",
+    ])
+
+    #expect(parsed.options["output"] == ["first", "second"])
+    #expect(parsed.flags == ["verbose"])
+}
+
+@Test
+func `validation rejects a required argument after an optional argument`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "input", isOptional: true),
+        .make(label: "output"),
+    ])
+
+    #expect(throws: CommanderError.requiredArgumentAfterOptional(
+        optionalLabel: "input",
+        requiredLabel: "output"))
+    {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects a required remaining argument after an optional argument`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "input", isOptional: true),
+        .make(label: "rest", parsing: .remaining),
+    ])
+
+    #expect(throws: CommanderError.requiredArgumentAfterOptional(
+        optionalLabel: "input",
+        requiredLabel: "rest"))
+    {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation accepts required arguments before optional and remaining arguments`() throws {
+    let signature = CommandSignature(arguments: [
+        .make(label: "input"),
+        .make(label: "output", isOptional: true),
+        .make(label: "rest", isOptional: true, parsing: .remaining),
+    ])
+
+    try signature.validate()
+}

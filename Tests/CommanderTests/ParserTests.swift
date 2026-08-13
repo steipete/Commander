@@ -61,6 +61,18 @@ func `parser rejects duplicate option spellings deterministically`() {
 }
 
 @Test
+func `parser rejects duplicate option labels before consuming input`() {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.long("output")]),
+        .make(label: "output", names: [.long("destination")]),
+    ])
+
+    #expect(throws: CommanderError.duplicateOptionLabel("output")) {
+        _ = try CommandParser(signature: signature).parse(arguments: ["--destination", "result.txt"])
+    }
+}
+
+@Test
 func `parser rejects duplicate flag spellings deterministically`() {
     let signature = CommandSignature(flags: [
         .make(label: "verbose", names: [.short("v")]),
@@ -159,6 +171,21 @@ func `remaining positional argument must be final`() {
 
     #expect(throws: CommanderError.invalidArgumentOrder("inputs")) {
         _ = try CommandParser(signature: signature).parse(arguments: ["input.txt", "output.txt"])
+    }
+}
+
+@Test
+func `parser rejects optional positional arguments before required ones`() {
+    let signature = CommandSignature(arguments: [
+        .make(label: "input", isOptional: true),
+        .make(label: "output"),
+    ])
+
+    #expect(throws: CommanderError.requiredArgumentAfterOptional(
+        optionalLabel: "input",
+        requiredLabel: "output"))
+    {
+        _ = try CommandParser(signature: signature).parse(arguments: ["result.txt"])
     }
 }
 
@@ -418,6 +445,42 @@ func `program rejects an invalid inactive command signature`() {
     #expect(throws: expected) {
         _ = try program.resolve(arguments: ["version"])
     }
+}
+
+@Test
+func `program reports the full inactive command path for duplicate semantic labels`() {
+    let version = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let run = CommandDescriptor(
+        name: "run",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(options: [
+            .make(label: "output", names: [.long("output")]),
+            .make(label: "output", names: [.long("destination")]),
+        ]))
+    let jobs = CommandDescriptor(
+        name: "jobs",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [run])
+    let admin = CommandDescriptor(
+        name: "admin",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [jobs])
+    let program = Program(descriptors: [version, admin])
+    let expected = CommanderProgramError.invalidCommandSignature(
+        command: "admin jobs run",
+        error: .duplicateOptionLabel("output"))
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["version"])
+    }
+    #expect(
+        expected.description ==
+            "Invalid signature for command 'admin jobs run': Duplicate option label 'output'")
 }
 
 @Test

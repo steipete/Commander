@@ -8,7 +8,11 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
     case missingArgument(String)
     case unexpectedArgument(String)
     case invalidArgumentOrder(String)
+    case requiredArgumentAfterOptional(optionalLabel: String, requiredLabel: String)
     case invalidValue(option: String, value: String)
+    case duplicateArgumentLabel(String)
+    case duplicateOptionLabel(String)
+    case duplicateFlagLabel(String)
     case duplicateOptionName(spelling: String, firstLabel: String, duplicateLabel: String)
     case duplicateFlagName(spelling: String, firstLabel: String, duplicateLabel: String)
     case conflictingName(spelling: String, optionLabel: String, flagLabel: String)
@@ -25,8 +29,16 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
             "Unexpected argument: \(value)"
         case let .invalidArgumentOrder(label):
             "Variadic argument '\(label)' must be the final positional argument"
+        case let .requiredArgumentAfterOptional(optionalLabel, requiredLabel):
+            "Required argument '\(requiredLabel)' cannot follow optional argument '\(optionalLabel)'"
         case let .invalidValue(option, value):
             "Invalid value '\(value)' for option \(option)"
+        case let .duplicateArgumentLabel(label):
+            "Duplicate argument label '\(label)'"
+        case let .duplicateOptionLabel(label):
+            "Duplicate option label '\(label)'"
+        case let .duplicateFlagLabel(label):
+            "Duplicate flag label '\(label)'"
         case let .duplicateOptionName(spelling, firstLabel, duplicateLabel):
             "Duplicate option spelling \(spelling) for '\(firstLabel)' and '\(duplicateLabel)'"
         case let .duplicateFlagName(spelling, firstLabel, duplicateLabel):
