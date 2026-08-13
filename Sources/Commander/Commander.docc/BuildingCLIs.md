@@ -56,6 +56,15 @@ command path so you can print breadcrumbs or analytics.
 When an embedding application has already removed its executable name, use
 `resolve(arguments:)` with the remaining argument tail instead.
 
+`Program` validates the entire descriptor tree before resolving any command.
+Duplicate command names, invalid default-subcommand targets, and malformed
+signatures therefore fail even when the invalid command is not selected. Direct
+signature consumers can run the same definition checks without parsing values:
+
+```swift
+try signature.validate()
+```
+
 ## Generate documentation
 
 From the Commander folder run the DocC plugin:
