@@ -7,7 +7,7 @@ extension SplitFileCommand: ParsableCommand {}
 
 private func requireSendable(_ value: some Sendable) {}
 
-private func requireCommandMetatypeSendable<T: ParsableCommand>(_ type: T.Type) {
+private func requireCommandMetatypeSendable(_ type: (some ParsableCommand).Type) {
     requireSendable(type)
 }
 
