@@ -9,6 +9,7 @@ All notable changes to Commander will be documented in this file.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
+- Reject duplicate option, flag, root-command, and nested subcommand names with typed errors instead of silently overwriting definitions, choosing the first match, or trapping.
 - Flatten nested option groups inside `CommandParser` so direct parsing honors grouped options and flags.
 - Reject excess positional arguments unless the final argument explicitly uses the `remaining` parsing strategy.
 - Treat negative numeric tokens as option values instead of misclassifying them as short flags.
