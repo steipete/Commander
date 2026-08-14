@@ -13,6 +13,9 @@ private func publicErrorCaseName(_ error: CommanderError) -> String {
     case .duplicateArgumentLabel: "duplicateArgumentLabel"
     case .duplicateOptionLabel: "duplicateOptionLabel"
     case .duplicateFlagLabel: "duplicateFlagLabel"
+    case .optionHasNoNames: "optionHasNoNames"
+    case .emptyOptionName: "emptyOptionName"
+    case .undeclaredJoinedShortName: "undeclaredJoinedShortName"
     case .duplicateOptionName: "duplicateOptionName"
     case .duplicateFlagName: "duplicateFlagName"
     case .conflictingName: "conflictingName"
@@ -25,6 +28,9 @@ func `public validation cases remain constructible and exhaustively matchable`()
         .duplicateArgumentLabel("target"),
         .duplicateOptionLabel("output"),
         .duplicateFlagLabel("verbose"),
+        .optionHasNoNames("output"),
+        .emptyOptionName("output"),
+        .undeclaredJoinedShortName(optionLabel: "define", name: "D"),
         .requiredArgumentAfterOptional(optionalLabel: "input", requiredLabel: "output"),
     ]
 
@@ -32,12 +38,18 @@ func `public validation cases remain constructible and exhaustively matchable`()
         "duplicateArgumentLabel",
         "duplicateOptionLabel",
         "duplicateFlagLabel",
+        "optionHasNoNames",
+        "emptyOptionName",
+        "undeclaredJoinedShortName",
         "requiredArgumentAfterOptional",
     ])
     #expect(errors.map(\.description) == [
         "Duplicate argument label 'target'",
         "Duplicate option label 'output'",
         "Duplicate flag label 'verbose'",
+        "Option 'output' must declare at least one name",
+        "Option 'output' declares an empty long name",
+        "Joined short name -D is not declared for option 'define'",
         "Required argument 'output' cannot follow optional argument 'input'",
     ])
 }
