@@ -228,6 +228,54 @@ func `errors when a required positional argument is missing`() {
 }
 
 @Test
+func `errors when a required option is missing`() {
+    let signature = CommandSignature(options: [
+        .make(
+            label: "output",
+            names: [.aliasLong("legacy-output"), .long("output")],
+            isOptional: false),
+    ])
+
+    #expect(throws: CommanderError.missingValue(option: "--output")) {
+        _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `errors when a required multi-value option has no values`() {
+    let cases: [(OptionParsingStrategy, [String])] = [
+        (.upToNextOption, ["--input", "--verbose"]),
+        (.remaining, ["--input"]),
+    ]
+
+    for (strategy, arguments) in cases {
+        let signature = CommandSignature(
+            options: [
+                .make(
+                    label: "input",
+                    names: [.long("input")],
+                    isOptional: false,
+                    parsing: strategy),
+            ],
+            flags: [.make(label: "verbose", names: [.long("verbose")])])
+
+        #expect(throws: CommanderError.missingValue(option: "--input")) {
+            _ = try CommandParser(signature: signature).parse(arguments: arguments)
+        }
+    }
+}
+
+@Test
+func `manual option definitions remain optional by default`() throws {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: [.long("output")]),
+    ])
+
+    let parsed = try CommandParser(signature: signature).parse(arguments: [])
+    #expect(parsed.options.isEmpty)
+}
+
+@Test
 func `accepts omitted optional positional arguments`() throws {
     let signature = CommandSignature(arguments: [
         .make(label: "source"),
@@ -343,6 +391,22 @@ func `program resolves command`() throws {
     #expect(invocation.descriptor.name == "demo")
     #expect(invocation.parsedValues.positional == ["Workspace"])
     #expect(invocation.path == ["demo"])
+}
+
+@Test
+func `program reports a missing required option as a parsing error`() {
+    let descriptor = CommandDescriptor(
+        name: "export",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(options: [
+            .make(label: "output", names: [.long("output")], isOptional: false),
+        ]))
+    let program = Program(descriptors: [descriptor])
+
+    #expect(throws: CommanderProgramError.parsingError(.missingValue(option: "--output"))) {
+        _ = try program.resolve(arguments: ["export"])
+    }
 }
 
 @Test

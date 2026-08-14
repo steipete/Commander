@@ -34,6 +34,13 @@ private struct ArgumentRequirementCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private struct OptionRequirementCommand: CommanderParsable, Sendable {
+    @Option var required: String
+    @Option var defaulted = "stdout"
+    @Option var optional: String?
+    init() {}
+}
+
 private struct RemainingArgumentCommand: CommanderParsable, Sendable {
     @Argument(parsing: .remaining) var values: String
     init() {}
@@ -93,6 +100,27 @@ func `distinguishes required defaulted and optional arguments`() {
 
     #expect(arguments.map(\.label) == ["required", "defaulted", "optional"])
     #expect(arguments.map(\.isOptional) == [false, true, true])
+}
+
+@Test
+func `distinguishes required defaulted and optional options`() {
+    let options = CommandSignature.describe(OptionRequirementCommand()).options
+
+    #expect(options.map(\.label) == ["required", "defaulted", "optional"])
+    #expect(options.map(\.isOptional) == [false, true, true])
+}
+
+@Test
+func `required option metadata drives parser validation`() throws {
+    let signature = CommandSignature.describe(OptionRequirementCommand())
+    let parser = CommandParser(signature: signature)
+
+    #expect(throws: CommanderError.missingValue(option: "--required")) {
+        _ = try parser.parse(arguments: [])
+    }
+
+    let parsed = try parser.parse(arguments: ["--required", "value"])
+    #expect(parsed.options["required"] == ["value"])
 }
 
 @Test

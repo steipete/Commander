@@ -116,6 +116,8 @@ public struct OptionDefinition: Sendable, Equatable {
     public let label: String
     public let names: [CommanderName]
     public let help: String?
+    /// Whether callers may omit this option entirely.
+    public let isOptional: Bool
     public let parsing: OptionParsingStrategy
     /// Short spellings that may carry their value in the same token, such as `-Ddebug`.
     public let joinedShortNames: Set<Character>
@@ -124,12 +126,14 @@ public struct OptionDefinition: Sendable, Equatable {
         label: String,
         names: [CommanderName],
         help: String? = nil,
+        isOptional: Bool = true,
         parsing: OptionParsingStrategy = .singleValue,
         joinedShortNames: Set<Character> = [])
     {
         self.label = label
         self.names = names
         self.help = help
+        self.isOptional = isOptional
         self.parsing = parsing
         self.joinedShortNames = joinedShortNames
     }
@@ -167,6 +171,7 @@ extension OptionDefinition {
         label: String,
         names: [CommanderName],
         help: String? = nil,
+        isOptional: Bool = true,
         parsing: OptionParsingStrategy = .singleValue,
         joinedShortNames: Set<Character> = []) -> OptionDefinition
     {
@@ -174,6 +179,7 @@ extension OptionDefinition {
             label: label,
             names: names,
             help: help,
+            isOptional: isOptional,
             parsing: parsing,
             joinedShortNames: joinedShortNames)
     }

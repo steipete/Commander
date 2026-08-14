@@ -6,6 +6,7 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
     private var storage: Value?
     private let nameSpecifications: [NameSpecification]
     private let help: String?
+    private let hasDefaultValue: Bool
     private let parsing: OptionParsingStrategy
 
     /// Accesses the parsed value, trapping when the option was never bound and
@@ -35,6 +36,7 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
         self.storage = wrappedValue
         self.nameSpecifications = [name]
         self.help = help
+        self.hasDefaultValue = true
         self.parsing = parsing
     }
 
@@ -46,6 +48,7 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
         self.storage = nil
         self.nameSpecifications = [name]
         self.help = help
+        self.hasDefaultValue = false
         self.parsing = parsing
     }
 
@@ -57,6 +60,7 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
         self.storage = nil
         self.nameSpecifications = names
         self.help = help
+        self.hasDefaultValue = false
         self.parsing = parsing
     }
 
@@ -67,7 +71,8 @@ public struct Option<Value: ExpressibleFromArgument>: CommanderMetadata {
             label: resolvedLabel,
             names: resolvedNames,
             help: help,
-            parsing: parsing,
+            isOptional: InputRequirement.isOptional(Value.self, hasDefaultValue: self.hasDefaultValue),
+            parsing: self.parsing,
             joinedShortNames: Set(self.nameSpecifications.compactMap(\.joinedShortName)))
         signature.append(.option(definition))
     }
@@ -132,7 +137,7 @@ public struct Argument<Value: ExpressibleFromArgument>: CommanderMetadata {
         let definition = ArgumentDefinition(
             label: resolvedLabel,
             help: help,
-            isOptional: self.hasDefaultValue || Value.self is OptionalProtocol.Type,
+            isOptional: InputRequirement.isOptional(Value.self, hasDefaultValue: self.hasDefaultValue),
             parsing: self.parsing)
         signature.append(.argument(definition))
     }
@@ -204,3 +209,9 @@ extension OptionGroup: Sendable where Group: Sendable {}
 
 private protocol OptionalProtocol {}
 extension Optional: OptionalProtocol {}
+
+private enum InputRequirement {
+    static func isOptional(_ type: (some Any).Type, hasDefaultValue: Bool) -> Bool {
+        hasDefaultValue || type is OptionalProtocol.Type
+    }
+}

@@ -81,7 +81,7 @@ public struct CommandParser: Sendable {
             }
         }
 
-        try self.validate(positional: positional)
+        try self.validate(positional: positional, options: options)
 
         return ParsedValues(positional: positional, options: options, flags: flags)
     }
@@ -92,7 +92,7 @@ public struct CommandParser: Sendable {
         let tokens: [Token]
     }
 
-    private func validate(positional: [String]) throws {
+    private func validate(positional: [String], options: [String: [String]]) throws {
         let acceptsRemainingArguments = self.signature.arguments.last?.parsing == .remaining
         if !acceptsRemainingArguments, positional.count > self.signature.arguments.count {
             throw CommanderError.unexpectedArgument(positional[self.signature.arguments.count])
@@ -102,6 +102,16 @@ public struct CommandParser: Sendable {
         {
             throw CommanderError.missingArgument(definition.label)
         }
+        if let missing = self.signature.options.first(where: {
+            !$0.isOptional && options[$0.label]?.isEmpty != false
+        }) {
+            throw CommanderError.missingValue(option: Self.displayName(for: missing))
+        }
+    }
+
+    private static func displayName(for definition: OptionDefinition) -> String {
+        let preferredName = definition.names.first(where: { !$0.isAlias }) ?? definition.names.first
+        return preferredName.map { CommandNameKey($0).spelling } ?? definition.label
     }
 
     private static func consumeShortToken(

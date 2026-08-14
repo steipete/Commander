@@ -132,7 +132,7 @@ Commander mirrors the ergonomics of Swift Argument Parser while keeping the pars
 | Wrapper | Description | Notable Parameters |
 | --- | --- | --- |
 | `@Argument` | Positional values. Commander automatically enforces optionals/non-optionals and rejects excess values. | `help`, `parsing` (`singleValue`, `remaining`) |
-| `@Option` | Named options (supports short, long, and custom spellings). | `name`, `names`, `parsing` (`singleValue`, `upToNextOption`, `remaining`) |
+| `@Option` | Named options (supports short, long, and custom spellings). Non-optional values without a default are required. | `name`, `names`, `parsing` (`singleValue`, `upToNextOption`, `remaining`) |
 | `@Flag` | Boolean switches. Commander automatically wires both short & long spellings. | `name`, `names`, `help` |
 | `@OptionGroup` | Reusable sets of options/flags (e.g., focus/window option structs). | – |
 
