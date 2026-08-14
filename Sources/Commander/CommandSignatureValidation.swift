@@ -43,8 +43,11 @@ struct CommandSignatureIndex: Sendable {
             guard flagLabels.insert(definition.label).inserted else {
                 throw CommanderError.duplicateFlagLabel(definition.label)
             }
-            for name in definition.names {
-                let key = CommandNameKey(name)
+            for key in try Self.validatedNameKeys(
+                label: definition.label,
+                names: definition.names,
+                kind: .flag)
+            {
                 if let existingLabel = flagLookup[key] {
                     throw CommanderError.duplicateFlagName(
                         spelling: key.spelling,
@@ -70,22 +73,11 @@ struct CommandSignatureIndex: Sendable {
     private static func validatedOptionNameKeys(
         for definition: OptionDefinition) throws(CommanderError) -> [CommandNameKey]
     {
-        guard !definition.names.isEmpty else {
-            throw CommanderError.optionHasNoNames(definition.label)
-        }
-
-        var keys: [CommandNameKey] = []
-        var declaredShortNames: Set<Character> = []
-        for name in definition.names {
-            let key = CommandNameKey(name)
-            if case let .long(value) = key, value.isEmpty {
-                throw CommanderError.emptyOptionName(definition.label)
-            }
-            if let shortName = key.shortComponent {
-                declaredShortNames.insert(shortName)
-            }
-            keys.append(key)
-        }
+        let keys = try Self.validatedNameKeys(
+            label: definition.label,
+            names: definition.names,
+            kind: .option)
+        let declaredShortNames = Set(keys.compactMap(\.shortComponent))
 
         if let undeclaredName = definition.joinedShortNames.sorted().first(where: {
             !declaredShortNames.contains($0)
@@ -93,6 +85,33 @@ struct CommandSignatureIndex: Sendable {
             throw CommanderError.undeclaredJoinedShortName(
                 optionLabel: definition.label,
                 name: undeclaredName)
+        }
+        return keys
+    }
+
+    private static func validatedNameKeys(
+        label: String,
+        names: [CommanderName],
+        kind: NamedDefinitionKind) throws(CommanderError) -> [CommandNameKey]
+    {
+        guard !names.isEmpty else {
+            throw kind.noNamesError(label: label)
+        }
+
+        var keys: [CommandNameKey] = []
+        for name in names {
+            let key = CommandNameKey(name)
+            switch key {
+            case let .long(value) where value.isEmpty:
+                throw kind.emptyNameError(label: label)
+            case let .long(value) where value.contains("="):
+                throw kind.unreachableNameError(label: label, spelling: key.spelling)
+            case .short("-"):
+                throw kind.unreachableNameError(label: label, spelling: key.spelling)
+            default:
+                break
+            }
+            keys.append(key)
         }
         return keys
     }
@@ -117,6 +136,38 @@ struct CommandSignatureIndex: Sendable {
                     optionalLabel: firstOptionalLabel,
                     requiredLabel: definition.label)
             }
+        }
+    }
+}
+
+private enum NamedDefinitionKind {
+    case option
+    case flag
+
+    func noNamesError(label: String) -> CommanderError {
+        switch self {
+        case .option:
+            .optionHasNoNames(label)
+        case .flag:
+            .flagHasNoNames(label)
+        }
+    }
+
+    func emptyNameError(label: String) -> CommanderError {
+        switch self {
+        case .option:
+            .emptyOptionName(label)
+        case .flag:
+            .emptyFlagName(label)
+        }
+    }
+
+    func unreachableNameError(label: String, spelling: String) -> CommanderError {
+        switch self {
+        case .option:
+            .unreachableOptionName(optionLabel: label, spelling: spelling)
+        case .flag:
+            .unreachableFlagName(flagLabel: label, spelling: spelling)
         }
     }
 }

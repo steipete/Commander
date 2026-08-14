@@ -165,8 +165,10 @@ Positional arguments consume one token by default. Declare every required positi
 
 Long options accept attached values such as `--output=-dash`. Short options only accept joined values when they opt in
 explicitly, for example `@Option(name: .customShort("D", allowingJoined: true)) var define: String?` accepts `-Ddebug`.
-Direct `OptionDefinition` values must declare at least one non-empty name, and every entry in `joinedShortNames` must
-refer to a short spelling on that same definition. Signature validation rejects unreachable metadata before parsing.
+Direct `OptionDefinition` and `FlagDefinition` values must declare at least one non-empty name, and every entry in
+`joinedShortNames` must refer to a short spelling on that same option. Signature validation rejects unreachable metadata
+before parsing, including long names containing `=` and the short name `-`, which are reserved for attached values and the
+bare option terminator.
 
 For advanced scenarios, `CommanderBindableValues` gives you helpers (`decodeOption`, `requireOption`, `makeWindowOptions`, etc.) so existing command types can conform to `CommanderBindableCommand` and hydrate themselves from parsed values without rewriting runtime logic.
 

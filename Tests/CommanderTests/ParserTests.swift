@@ -87,6 +87,25 @@ func `parser rejects unreachable joined short metadata before tokenization`() {
 }
 
 @Test
+func `parser rejects reserved option names before tokenization`() {
+    let cases: [(OptionDefinition, CommanderError)] = [
+        (
+            .make(label: "input", names: [.aliasLong("key=value")]),
+            .unreachableOptionName(optionLabel: "input", spelling: "--key=value")),
+        (
+            .make(label: "input", names: [.aliasShort("-")]),
+            .unreachableOptionName(optionLabel: "input", spelling: "--")),
+    ]
+
+    for (definition, expectedError) in cases {
+        let signature = CommandSignature(options: [definition])
+        #expect(throws: expectedError) {
+            _ = try CommandParser(signature: signature).parse(arguments: [])
+        }
+    }
+}
+
+@Test
 func `parser rejects duplicate option labels before consuming input`() {
     let signature = CommandSignature(options: [
         .make(label: "output", names: [.long("output")]),
@@ -111,6 +130,27 @@ func `parser rejects duplicate flag spellings deterministically`() {
         duplicateLabel: "trace"))
     {
         _ = try CommandParser(signature: signature).parse(arguments: [])
+    }
+}
+
+@Test
+func `parser rejects unreachable flag names before tokenization`() {
+    let cases: [(FlagDefinition, CommanderError)] = [
+        (.make(label: "hidden", names: []), .flagHasNoNames("hidden")),
+        (.make(label: "hidden", names: [.aliasLong("")]), .emptyFlagName("hidden")),
+        (
+            .make(label: "hidden", names: [.aliasLong("hidden=true")]),
+            .unreachableFlagName(flagLabel: "hidden", spelling: "--hidden=true")),
+        (
+            .make(label: "hidden", names: [.aliasShort("-")]),
+            .unreachableFlagName(flagLabel: "hidden", spelling: "--")),
+    ]
+
+    for (definition, expectedError) in cases {
+        let signature = CommandSignature(flags: [definition])
+        #expect(throws: expectedError) {
+            _ = try CommandParser(signature: signature).parse(arguments: [])
+        }
     }
 }
 
@@ -531,6 +571,32 @@ func `program rejects an invalid inactive command signature`() {
     let expected = CommanderProgramError.invalidCommandSignature(
         command: "jobs run",
         error: .duplicateFlagName(spelling: "-v", firstLabel: "verbose", duplicateLabel: "trace"))
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["version"])
+    }
+}
+
+@Test
+func `program rejects a nameless flag in an inactive nested command`() {
+    let version = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let run = CommandDescriptor(
+        name: "run",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(flags: [
+            .make(label: "hidden", names: []),
+        ]))
+    let admin = CommandDescriptor(
+        name: "admin",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [run])
+    let program = Program(descriptors: [version, admin])
+    let expected = CommanderProgramError.invalidCommandSignature(
+        command: "admin run",
+        error: .flagHasNoNames("hidden"))
 
     #expect(throws: expected) {
         _ = try program.resolve(arguments: ["version"])

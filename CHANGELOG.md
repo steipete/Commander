@@ -10,15 +10,17 @@ All notable changes to Commander will be documented in this file.
 ### Breaking
 - `CommanderError` and `CommanderProgramError` gained validation cases; downstream exhaustive switches must handle the new failures.
 - `CommanderError` now distinguishes duplicate argument, option, and flag labels plus required-after-optional positional definitions; exhaustive switches must add the four new cases.
-- `CommanderError` now rejects nameless options, empty long names, and undeclared joined-short names with dedicated cases; exhaustive switches must add the three new cases.
+- `CommanderError` now rejects nameless options, empty or unreachable option spellings, and undeclared joined-short names with dedicated cases; exhaustive switches must add the four new cases.
+- `CommanderError` now rejects nameless flags and empty or unreachable flag spellings with dedicated cases; exhaustive switches must add the three new cases.
 
 ### Added
 - Accept attached long-option values such as `--output=-dash` and opt-in joined short values such as `-Ddebug`.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
-- Reject option definitions whose names are empty, unreachable, or inconsistent with their joined-short metadata.
+- Reject option definitions whose names are empty, reserved by tokenization, or inconsistent with their joined-short metadata.
 - Record option requiredness in command signatures and reject omitted or valueless non-optional, non-defaulted options before command code can access an unbound wrapper.
+- Reject flag definitions whose names are empty or reserved by tokenization.
 - Keep tokens after a bare `--` positional instead of routing them into an unselected `remaining` option.
 - Require sendable command metatypes instead of sendable command instances on Swift 6.2+, avoiding retroactive `Sendable` diagnostics when a command adopts `ParsableCommand` in another source file.
 - Validate every registered command signature and default-subcommand target before resolving any path so malformed inactive commands fail closed.

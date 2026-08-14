@@ -1,6 +1,15 @@
 import Commander
 import Testing
 
+private struct NamelessFlagCommand: CommanderParsable {
+    @Flag(names: []) var hidden = false
+}
+
+private struct ReservedNameCommand: CommanderParsable {
+    @Option(name: .customLong("key=value")) var option: String?
+    @Flag(name: .customShort("-", allowingJoined: false)) var flag = false
+}
+
 @Test
 func `validation rejects duplicate argument labels`() {
     let signature = CommandSignature(arguments: [
@@ -64,6 +73,26 @@ func `validation rejects joined short names absent from their option`() {
 }
 
 @Test
+func `validation rejects reserved primary and alias option names`() {
+    let cases: [(CommanderName, String)] = [
+        (.long("key=value"), "--key=value"),
+        (.aliasLong("legacy=value"), "--legacy=value"),
+        (.short("-"), "--"),
+        (.aliasShort("-"), "--"),
+    ]
+
+    for (name, spelling) in cases {
+        let signature = CommandSignature(options: [
+            .make(label: "input", names: [name]),
+        ])
+
+        #expect(throws: CommanderError.unreachableOptionName(optionLabel: "input", spelling: spelling)) {
+            try signature.validate()
+        }
+    }
+}
+
+@Test
 func `validation accepts a declared joined short alias`() throws {
     let signature = CommandSignature(options: [
         .make(
@@ -85,6 +114,68 @@ func `validation rejects duplicate flag labels across distinct spellings`() {
     ])
 
     #expect(throws: CommanderError.duplicateFlagLabel("verbose")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects flags without names`() {
+    let signature = CommandSignature(flags: [
+        .make(label: "hidden", names: []),
+    ])
+
+    #expect(throws: CommanderError.flagHasNoNames("hidden")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects empty primary and alias flag long names`() {
+    for name: CommanderName in [.long(""), .aliasLong("")] {
+        let signature = CommandSignature(flags: [
+            .make(label: "hidden", names: [name]),
+        ])
+
+        #expect(throws: CommanderError.emptyFlagName("hidden")) {
+            try signature.validate()
+        }
+    }
+}
+
+@Test
+func `validation rejects reserved primary and alias flag names`() {
+    let cases: [(CommanderName, String)] = [
+        (.long("dry=run"), "--dry=run"),
+        (.aliasLong("legacy=true"), "--legacy=true"),
+        (.short("-"), "--"),
+        (.aliasShort("-"), "--"),
+    ]
+
+    for (name, spelling) in cases {
+        let signature = CommandSignature(flags: [
+            .make(label: "dryRun", names: [name]),
+        ])
+
+        #expect(throws: CommanderError.unreachableFlagName(flagLabel: "dryRun", spelling: spelling)) {
+            try signature.validate()
+        }
+    }
+}
+
+@Test
+func `validation rejects a reflected flag without names`() {
+    let signature = CommandSignature.describe(NamelessFlagCommand())
+
+    #expect(throws: CommanderError.flagHasNoNames("hidden")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects reserved names reflected from property wrappers`() {
+    let signature = CommandSignature.describe(ReservedNameCommand())
+
+    #expect(throws: CommanderError.unreachableOptionName(optionLabel: "option", spelling: "--key=value")) {
         try signature.validate()
     }
 }
