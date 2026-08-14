@@ -101,8 +101,15 @@ struct CommandSignatureIndex: Sendable {
         var keys: [CommandNameKey] = []
         for name in names {
             let key = CommandNameKey(name)
-            if case let .long(value) = key, value.isEmpty {
+            switch key {
+            case let .long(value) where value.isEmpty:
                 throw kind.emptyNameError(label: label)
+            case let .long(value) where value.contains("="):
+                throw kind.unreachableNameError(label: label, spelling: key.spelling)
+            case .short("-"):
+                throw kind.unreachableNameError(label: label, spelling: key.spelling)
+            default:
+                break
             }
             keys.append(key)
         }
@@ -152,6 +159,15 @@ private enum NamedDefinitionKind {
             .emptyOptionName(label)
         case .flag:
             .emptyFlagName(label)
+        }
+    }
+
+    func unreachableNameError(label: String, spelling: String) -> CommanderError {
+        switch self {
+        case .option:
+            .unreachableOptionName(optionLabel: label, spelling: spelling)
+        case .flag:
+            .unreachableFlagName(flagLabel: label, spelling: spelling)
         }
     }
 }

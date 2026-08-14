@@ -87,6 +87,25 @@ func `parser rejects unreachable joined short metadata before tokenization`() {
 }
 
 @Test
+func `parser rejects reserved option names before tokenization`() {
+    let cases: [(OptionDefinition, CommanderError)] = [
+        (
+            .make(label: "input", names: [.aliasLong("key=value")]),
+            .unreachableOptionName(optionLabel: "input", spelling: "--key=value")),
+        (
+            .make(label: "input", names: [.aliasShort("-")]),
+            .unreachableOptionName(optionLabel: "input", spelling: "--")),
+    ]
+
+    for (definition, expectedError) in cases {
+        let signature = CommandSignature(options: [definition])
+        #expect(throws: expectedError) {
+            _ = try CommandParser(signature: signature).parse(arguments: [])
+        }
+    }
+}
+
+@Test
 func `parser rejects duplicate option labels before consuming input`() {
     let signature = CommandSignature(options: [
         .make(label: "output", names: [.long("output")]),
@@ -119,6 +138,12 @@ func `parser rejects unreachable flag names before tokenization`() {
     let cases: [(FlagDefinition, CommanderError)] = [
         (.make(label: "hidden", names: []), .flagHasNoNames("hidden")),
         (.make(label: "hidden", names: [.aliasLong("")]), .emptyFlagName("hidden")),
+        (
+            .make(label: "hidden", names: [.aliasLong("hidden=true")]),
+            .unreachableFlagName(flagLabel: "hidden", spelling: "--hidden=true")),
+        (
+            .make(label: "hidden", names: [.aliasShort("-")]),
+            .unreachableFlagName(flagLabel: "hidden", spelling: "--")),
     ]
 
     for (definition, expectedError) in cases {

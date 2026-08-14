@@ -76,7 +76,9 @@ Put compatibility spellings on one option or flag definition with `aliasLong` or
 when its spelling differs. Required positional arguments must precede optional
 ones, and a positional using the `remaining` strategy must be last. Every option
 and flag must declare at least one non-empty name, and joined-short metadata must
-refer to a short spelling on the same option.
+refer to a short spelling on the same option. Long names containing `=` and the
+short name `-` are rejected because tokenization reserves those spellings for
+attached values and the bare option terminator.
 
 When validation runs through `Program`, an invalid signature is reported as an
 `invalidCommandSignature` error with the complete nested command path. Direct
