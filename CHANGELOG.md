@@ -9,6 +9,7 @@ All notable changes to Commander will be documented in this file.
 
 ### Breaking
 - `CommanderError` and `CommanderProgramError` gained validation cases; downstream exhaustive switches must handle the new failures.
+- `CommanderProgramError` now rejects empty and option-shaped command names with `invalidCommandName`; exhaustive switches must handle the new case.
 - `CommanderError` now distinguishes duplicate argument, option, and flag labels plus required-after-optional positional definitions; exhaustive switches must add the four new cases.
 - `CommanderError` now rejects nameless options, empty or unreachable option spellings, and undeclared joined-short names with dedicated cases; exhaustive switches must add the four new cases.
 - `CommanderError` now rejects nameless flags and empty or unreachable flag spellings with dedicated cases; exhaustive switches must add the three new cases.
@@ -18,6 +19,7 @@ All notable changes to Commander will be documented in this file.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
+- Reject empty and option-shaped root, nested, and default command names during registration, including malformed inactive branches.
 - Reject option definitions whose names are empty, reserved by tokenization, or inconsistent with their joined-short metadata.
 - Record option requiredness in command signatures and reject omitted or valueless non-optional, non-defaulted options before command code can access an unbound wrapper.
 - Reject flag definitions whose names are empty or reserved by tokenization.

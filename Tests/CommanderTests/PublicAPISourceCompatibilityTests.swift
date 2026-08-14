@@ -26,6 +26,21 @@ private func publicErrorCaseName(_ error: CommanderError) -> String {
     }
 }
 
+private func publicProgramErrorCaseName(_ error: CommanderProgramError) -> String {
+    switch error {
+    case .missingCommand: "missingCommand"
+    case .unknownCommand: "unknownCommand"
+    case .duplicateCommand: "duplicateCommand"
+    case .invalidCommandName: "invalidCommandName"
+    case .duplicateSubcommand: "duplicateSubcommand"
+    case .invalidDefaultSubcommand: "invalidDefaultSubcommand"
+    case .invalidCommandSignature: "invalidCommandSignature"
+    case .missingSubcommand: "missingSubcommand"
+    case .unknownSubcommand: "unknownSubcommand"
+    case .parsingError: "parsingError"
+    }
+}
+
 @Test
 func `public validation cases remain constructible and exhaustively matchable`() {
     let errors: [CommanderError] = [
@@ -68,4 +83,14 @@ func `public validation cases remain constructible and exhaustively matchable`()
         "Joined short name -D is not declared for option 'define'",
         "Required argument 'output' cannot follow optional argument 'input'",
     ])
+}
+
+@Test
+func `public command name validation case remains constructible and exhaustively matchable`() {
+    let error = CommanderProgramError.invalidCommandName(path: "admin jobs --hidden", name: "--hidden")
+
+    #expect(publicProgramErrorCaseName(error) == "invalidCommandName")
+    #expect(
+        error.description ==
+            "Invalid command name '--hidden' at 'admin jobs --hidden'; names cannot be empty or begin with '-'")
 }

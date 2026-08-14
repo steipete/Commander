@@ -46,6 +46,7 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
     case missingCommand
     case unknownCommand(String)
     case duplicateCommand(String)
+    case invalidCommandName(path: String, name: String)
     case duplicateSubcommand(command: String, name: String)
     case invalidDefaultSubcommand(command: String, name: String)
     case invalidCommandSignature(command: String, error: CommanderError)
@@ -61,6 +62,8 @@ public enum CommanderProgramError: Error, CustomStringConvertible, Sendable, Equ
             "Unknown command '\(name)'"
         case let .duplicateCommand(name):
             "Duplicate root command '\(name)'"
+        case let .invalidCommandName(path, name):
+            "Invalid command name '\(name)' at '\(path)'; names cannot be empty or begin with '-'"
         case let .duplicateSubcommand(command, name):
             "Duplicate subcommand '\(name)' for command '\(command)'"
         case let .invalidDefaultSubcommand(command, name):
@@ -157,6 +160,10 @@ public struct Program: Sendable {
         in descriptor: CommandDescriptor,
         path: [String]) -> CommanderProgramError?
     {
+        if let error = invalidCommandNameError(name: descriptor.name, path: path) {
+            return error
+        }
+
         var names: Set<String> = []
         for child in descriptor.subcommands {
             guard names.insert(child.name).inserted else {
@@ -170,8 +177,13 @@ public struct Program: Sendable {
             return .invalidCommandSignature(command: path.joined(separator: " "), error: error)
         }
 
-        if let defaultName = descriptor.defaultSubcommandName, !names.contains(defaultName) {
-            return .invalidDefaultSubcommand(command: path.joined(separator: " "), name: defaultName)
+        if let defaultName = descriptor.defaultSubcommandName {
+            if let error = Self.invalidCommandNameError(name: defaultName, path: path + [defaultName]) {
+                return error
+            }
+            if !names.contains(defaultName) {
+                return .invalidDefaultSubcommand(command: path.joined(separator: " "), name: defaultName)
+            }
         }
 
         for child in descriptor.subcommands {
@@ -180,6 +192,15 @@ public struct Program: Sendable {
             }
         }
         return nil
+    }
+
+    private static func invalidCommandNameError(
+        name: String,
+        path: [String]) -> CommanderProgramError?
+    {
+        guard name.isEmpty || name.hasPrefix("-") else { return nil }
+        let displayPath = path.map { $0.isEmpty ? "<empty>" : $0 }.joined(separator: " ")
+        return .invalidCommandName(path: displayPath, name: name)
     }
 
     private func resolveDescriptor(

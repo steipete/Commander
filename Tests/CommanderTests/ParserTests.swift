@@ -522,6 +522,29 @@ func `program rejects duplicate root command names without trapping`() {
 }
 
 @Test
+func `program rejects malformed root command names before unrelated resolution`() {
+    let valid = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let cases = [
+        (name: "", path: "<empty>"),
+        (name: "-", path: "-"),
+        (name: "--hidden", path: "--hidden"),
+    ]
+
+    for testCase in cases {
+        let invalid = CommandDescriptor(
+            name: testCase.name,
+            abstract: "",
+            discussion: nil,
+            signature: CommandSignature())
+        let program = Program(descriptors: [valid, invalid])
+
+        #expect(throws: CommanderProgramError.invalidCommandName(path: testCase.path, name: testCase.name)) {
+            _ = try program.resolve(arguments: ["version"])
+        }
+    }
+}
+
+@Test
 func `program rejects duplicate nested subcommand names deterministically`() {
     let leaf = CommandDescriptor(name: "run", abstract: "First", discussion: nil, signature: CommandSignature())
     let duplicate = CommandDescriptor(
@@ -575,6 +598,37 @@ func `program rejects an invalid inactive command signature`() {
     #expect(throws: expected) {
         _ = try program.resolve(arguments: ["version"])
     }
+}
+
+@Test
+func `program rejects a malformed inactive nested command with its full path`() {
+    let version = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let hidden = CommandDescriptor(
+        name: "--hidden",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature())
+    let jobs = CommandDescriptor(
+        name: "jobs",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [hidden])
+    let admin = CommandDescriptor(
+        name: "admin",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [jobs])
+    let program = Program(descriptors: [version, admin])
+    let expected = CommanderProgramError.invalidCommandName(path: "admin jobs --hidden", name: "--hidden")
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["version"])
+    }
+    #expect(
+        expected.description ==
+            "Invalid command name '--hidden' at 'admin jobs --hidden'; names cannot be empty or begin with '-'")
 }
 
 @Test
@@ -657,6 +711,31 @@ func `program rejects an unregistered default subcommand`() {
 }
 
 @Test
+func `program rejects a malformed default subcommand name before selection`() {
+    let hidden = CommandDescriptor(
+        name: "--hidden",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature())
+    let root = CommandDescriptor(
+        name: "list",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [hidden],
+        defaultSubcommandName: "--hidden")
+    let program = Program(descriptors: [root])
+    let expected = CommanderProgramError.invalidCommandName(path: "list --hidden", name: "--hidden")
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["list"])
+    }
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["list", "--hidden"])
+    }
+}
+
+@Test
 func `program resolves nested subcommand`() throws {
     let child = CommandDescriptor(name: "windows", abstract: "", discussion: nil, signature: signature)
     let parent = CommandDescriptor(
@@ -692,6 +771,36 @@ func `program uses default subcommand when missing`() throws {
     #expect(invocation.descriptor.name == "apps")
     #expect(invocation.parsedValues.flags.contains("jsonOutput"))
     #expect(invocation.path == ["list", "apps"])
+}
+
+@Test
+func `program preserves valid siblings explicit defaults and option parsing`() throws {
+    let run = CommandDescriptor(
+        name: "run",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(options: [
+            .make(label: "output", names: [.long("output")]),
+        ]))
+    let version = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let root = CommandDescriptor(
+        name: "tool",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [run, version],
+        defaultSubcommandName: "run")
+    let program = Program(descriptors: [root])
+
+    let implicit = try program.resolve(arguments: ["tool", "--output", "implicit.txt"])
+    let explicit = try program.resolve(arguments: ["tool", "run", "--output", "explicit.txt"])
+    let sibling = try program.resolve(arguments: ["tool", "version"])
+
+    #expect(implicit.path == ["tool", "run"])
+    #expect(implicit.parsedValues.options["output"] == ["implicit.txt"])
+    #expect(explicit.path == ["tool", "run"])
+    #expect(explicit.parsedValues.options["output"] == ["explicit.txt"])
+    #expect(sibling.path == ["tool", "version"])
 }
 
 @Test
