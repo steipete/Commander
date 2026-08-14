@@ -115,6 +115,21 @@ func `parser rejects duplicate flag spellings deterministically`() {
 }
 
 @Test
+func `parser rejects unreachable flag names before tokenization`() {
+    let cases: [(FlagDefinition, CommanderError)] = [
+        (.make(label: "hidden", names: []), .flagHasNoNames("hidden")),
+        (.make(label: "hidden", names: [.aliasLong("")]), .emptyFlagName("hidden")),
+    ]
+
+    for (definition, expectedError) in cases {
+        let signature = CommandSignature(flags: [definition])
+        #expect(throws: expectedError) {
+            _ = try CommandParser(signature: signature).parse(arguments: [])
+        }
+    }
+}
+
+@Test
 func `parser rejects option flag spelling collisions`() {
     let signature = CommandSignature(
         options: [
@@ -531,6 +546,32 @@ func `program rejects an invalid inactive command signature`() {
     let expected = CommanderProgramError.invalidCommandSignature(
         command: "jobs run",
         error: .duplicateFlagName(spelling: "-v", firstLabel: "verbose", duplicateLabel: "trace"))
+
+    #expect(throws: expected) {
+        _ = try program.resolve(arguments: ["version"])
+    }
+}
+
+@Test
+func `program rejects a nameless flag in an inactive nested command`() {
+    let version = CommandDescriptor(name: "version", abstract: "", discussion: nil, signature: CommandSignature())
+    let run = CommandDescriptor(
+        name: "run",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(flags: [
+            .make(label: "hidden", names: []),
+        ]))
+    let admin = CommandDescriptor(
+        name: "admin",
+        abstract: "",
+        discussion: nil,
+        signature: CommandSignature(),
+        subcommands: [run])
+    let program = Program(descriptors: [version, admin])
+    let expected = CommanderProgramError.invalidCommandSignature(
+        command: "admin run",
+        error: .flagHasNoNames("hidden"))
 
     #expect(throws: expected) {
         _ = try program.resolve(arguments: ["version"])

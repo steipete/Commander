@@ -1,6 +1,10 @@
 import Commander
 import Testing
 
+private struct NamelessFlagCommand: CommanderParsable {
+    @Flag(names: []) var hidden = false
+}
+
 @Test
 func `validation rejects duplicate argument labels`() {
     let signature = CommandSignature(arguments: [
@@ -85,6 +89,39 @@ func `validation rejects duplicate flag labels across distinct spellings`() {
     ])
 
     #expect(throws: CommanderError.duplicateFlagLabel("verbose")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects flags without names`() {
+    let signature = CommandSignature(flags: [
+        .make(label: "hidden", names: []),
+    ])
+
+    #expect(throws: CommanderError.flagHasNoNames("hidden")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects empty primary and alias flag long names`() {
+    for name: CommanderName in [.long(""), .aliasLong("")] {
+        let signature = CommandSignature(flags: [
+            .make(label: "hidden", names: [name]),
+        ])
+
+        #expect(throws: CommanderError.emptyFlagName("hidden")) {
+            try signature.validate()
+        }
+    }
+}
+
+@Test
+func `validation rejects a reflected flag without names`() {
+    let signature = CommandSignature.describe(NamelessFlagCommand())
+
+    #expect(throws: CommanderError.flagHasNoNames("hidden")) {
         try signature.validate()
     }
 }

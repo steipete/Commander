@@ -15,6 +15,8 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
     case duplicateFlagLabel(String)
     case optionHasNoNames(String)
     case emptyOptionName(String)
+    case flagHasNoNames(String)
+    case emptyFlagName(String)
     case undeclaredJoinedShortName(optionLabel: String, name: Character)
     case duplicateOptionName(spelling: String, firstLabel: String, duplicateLabel: String)
     case duplicateFlagName(spelling: String, firstLabel: String, duplicateLabel: String)
@@ -46,6 +48,10 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
             "Option '\(label)' must declare at least one name"
         case let .emptyOptionName(label):
             "Option '\(label)' declares an empty long name"
+        case let .flagHasNoNames(label):
+            "Flag '\(label)' must declare at least one name"
+        case let .emptyFlagName(label):
+            "Flag '\(label)' declares an empty long name"
         case let .undeclaredJoinedShortName(optionLabel, name):
             "Joined short name -\(name) is not declared for option '\(optionLabel)'"
         case let .duplicateOptionName(spelling, firstLabel, duplicateLabel):
