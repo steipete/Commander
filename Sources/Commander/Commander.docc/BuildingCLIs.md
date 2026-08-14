@@ -69,7 +69,9 @@ Within a signature, argument, option, and flag labels are unique semantic keys.
 Put compatibility spellings on one option or flag definition with `aliasLong` or
 `aliasShort`; declaring a second definition with the same label is rejected even
 when its spelling differs. Required positional arguments must precede optional
-ones, and a positional using the `remaining` strategy must be last.
+ones, and a positional using the `remaining` strategy must be last. Every option
+must declare at least one non-empty name, and joined-short metadata must refer to
+a short spelling on the same option.
 
 When validation runs through `Program`, an invalid signature is reported as an
 `invalidCommandSignature` error with the complete nested command path. Direct

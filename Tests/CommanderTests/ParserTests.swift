@@ -73,6 +73,20 @@ func `parser rejects duplicate option spellings deterministically`() {
 }
 
 @Test
+func `parser rejects unreachable joined short metadata before tokenization`() {
+    let signature = CommandSignature(options: [
+        .make(
+            label: "define",
+            names: [.long("define")],
+            joinedShortNames: ["D"]),
+    ])
+
+    #expect(throws: CommanderError.undeclaredJoinedShortName(optionLabel: "define", name: "D")) {
+        _ = try CommandParser(signature: signature).parse(arguments: ["-Ddebug"])
+    }
+}
+
+@Test
 func `parser rejects duplicate option labels before consuming input`() {
     let signature = CommandSignature(options: [
         .make(label: "output", names: [.long("output")]),

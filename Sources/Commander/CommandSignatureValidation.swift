@@ -26,8 +26,7 @@ struct CommandSignatureIndex: Sendable {
             guard optionLabels.insert(definition.label).inserted else {
                 throw CommanderError.duplicateOptionLabel(definition.label)
             }
-            for name in definition.names {
-                let key = CommandNameKey(name)
+            for key in try Self.validatedOptionNameKeys(for: definition) {
                 if let existing = optionLookup[key] {
                     throw CommanderError.duplicateOptionName(
                         spelling: key.spelling,
@@ -66,6 +65,36 @@ struct CommandSignatureIndex: Sendable {
         self.flags = flagLookup
         self.optionShortNames = Set(optionLookup.keys.compactMap(\.shortComponent))
         self.flagShortNames = Set(flagLookup.keys.compactMap(\.shortComponent))
+    }
+
+    private static func validatedOptionNameKeys(
+        for definition: OptionDefinition) throws(CommanderError) -> [CommandNameKey]
+    {
+        guard !definition.names.isEmpty else {
+            throw CommanderError.optionHasNoNames(definition.label)
+        }
+
+        var keys: [CommandNameKey] = []
+        var declaredShortNames: Set<Character> = []
+        for name in definition.names {
+            let key = CommandNameKey(name)
+            if case let .long(value) = key, value.isEmpty {
+                throw CommanderError.emptyOptionName(definition.label)
+            }
+            if let shortName = key.shortComponent {
+                declaredShortNames.insert(shortName)
+            }
+            keys.append(key)
+        }
+
+        if let undeclaredName = definition.joinedShortNames.sorted().first(where: {
+            !declaredShortNames.contains($0)
+        }) {
+            throw CommanderError.undeclaredJoinedShortName(
+                optionLabel: definition.label,
+                name: undeclaredName)
+        }
+        return keys
     }
 
     private static func validateArguments(_ arguments: [ArgumentDefinition]) throws(CommanderError) {

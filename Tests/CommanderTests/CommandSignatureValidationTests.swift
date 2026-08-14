@@ -26,6 +26,58 @@ func `validation rejects duplicate option labels across distinct spellings`() {
 }
 
 @Test
+func `validation rejects options without names`() {
+    let signature = CommandSignature(options: [
+        .make(label: "output", names: []),
+    ])
+
+    #expect(throws: CommanderError.optionHasNoNames("output")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation rejects empty primary and alias long names`() {
+    for name: CommanderName in [.long(""), .aliasLong("")] {
+        let signature = CommandSignature(options: [
+            .make(label: "output", names: [name]),
+        ])
+
+        #expect(throws: CommanderError.emptyOptionName("output")) {
+            try signature.validate()
+        }
+    }
+}
+
+@Test
+func `validation rejects joined short names absent from their option`() {
+    let signature = CommandSignature(options: [
+        .make(
+            label: "define",
+            names: [.long("define")],
+            joinedShortNames: ["Z", "D"]),
+    ])
+
+    #expect(throws: CommanderError.undeclaredJoinedShortName(optionLabel: "define", name: "D")) {
+        try signature.validate()
+    }
+}
+
+@Test
+func `validation accepts a declared joined short alias`() throws {
+    let signature = CommandSignature(options: [
+        .make(
+            label: "define",
+            names: [.long("define"), .aliasShort("D")],
+            joinedShortNames: ["D"]),
+    ])
+
+    try signature.validate()
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["-Ddebug"])
+    #expect(parsed.options["define"] == ["debug"])
+}
+
+@Test
 func `validation rejects duplicate flag labels across distinct spellings`() {
     let signature = CommandSignature(flags: [
         .make(label: "verbose", names: [.long("verbose")]),

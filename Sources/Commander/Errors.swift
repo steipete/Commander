@@ -1,7 +1,7 @@
 import Foundation
 
-/// Errors emitted by ``CommandParser`` when raw arguments cannot be bound to a
-/// ``CommandSignature``.
+/// Errors emitted when validating a ``CommandSignature`` or binding raw arguments
+/// with ``CommandParser``.
 public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable {
     case unknownOption(String)
     case missingValue(option: String)
@@ -13,6 +13,9 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
     case duplicateArgumentLabel(String)
     case duplicateOptionLabel(String)
     case duplicateFlagLabel(String)
+    case optionHasNoNames(String)
+    case emptyOptionName(String)
+    case undeclaredJoinedShortName(optionLabel: String, name: Character)
     case duplicateOptionName(spelling: String, firstLabel: String, duplicateLabel: String)
     case duplicateFlagName(spelling: String, firstLabel: String, duplicateLabel: String)
     case conflictingName(spelling: String, optionLabel: String, flagLabel: String)
@@ -39,6 +42,12 @@ public enum CommanderError: Error, CustomStringConvertible, Sendable, Equatable 
             "Duplicate option label '\(label)'"
         case let .duplicateFlagLabel(label):
             "Duplicate flag label '\(label)'"
+        case let .optionHasNoNames(label):
+            "Option '\(label)' must declare at least one name"
+        case let .emptyOptionName(label):
+            "Option '\(label)' declares an empty long name"
+        case let .undeclaredJoinedShortName(optionLabel, name):
+            "Joined short name -\(name) is not declared for option '\(optionLabel)'"
         case let .duplicateOptionName(spelling, firstLabel, duplicateLabel):
             "Duplicate option spelling \(spelling) for '\(firstLabel)' and '\(duplicateLabel)'"
         case let .duplicateFlagName(spelling, firstLabel, duplicateLabel):
