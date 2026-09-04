@@ -4,6 +4,9 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+### Platform/CI
+- Update the pinned checkout action to 7.0.1 for upstream checkout fixes and dependency updates.
+
 ### Highlights
 - Command routing and argument parsing now fail closed on ambiguous spellings, duplicate semantic labels, invalid positional ordering, and malformed invocations instead of silently choosing or ignoring input.
 
