@@ -2,32 +2,21 @@
 
 All notable changes to Commander will be documented in this file.
 
-## Unreleased
+## [0.3.0] - 2026-09-13
 
-### Platform/CI
-- Update the pinned checkout action to 7.0.1 for upstream checkout fixes and dependency updates.
-
-### Highlights
-- Command routing and argument parsing now fail closed on ambiguous spellings, duplicate semantic labels, invalid positional ordering, and malformed invocations instead of silently choosing or ignoring input.
-
-### Breaking
-- `CommanderError` and `CommanderProgramError` gained validation cases; downstream exhaustive switches must handle the new failures.
-- `CommanderProgramError` now rejects empty and option-shaped command names with `invalidCommandName`; exhaustive switches must handle the new case.
-- `CommanderError` now distinguishes duplicate argument, option, and flag labels plus required-after-optional positional definitions; exhaustive switches must add the four new cases.
-- `CommanderError` now rejects nameless options, empty or unreachable option spellings, and undeclared joined-short names with dedicated cases; exhaustive switches must add the four new cases.
-- `CommanderError` now rejects nameless flags and empty or unreachable flag spellings with dedicated cases; exhaustive switches must add the three new cases.
+**Highlights:** Command routing and argument parsing now fail closed on malformed or ambiguous input, and downstream exhaustive switches must handle the new `CommanderError` and `CommanderProgramError` cases.
 
 ### Added
 - Accept attached long-option values such as `--output=-dash` and opt-in joined short values such as `-Ddebug`.
 - Add explicit `Program.resolve(commandLine:)` and `resolve(arguments:)` entry points for generic executables and pre-trimmed argument tails.
 
 ### Fixed
+- Command routing and argument parsing now fail closed on ambiguous spellings, duplicate semantic labels, invalid positional ordering, and malformed invocations instead of silently choosing or ignoring input.
 - Reject empty and option-shaped root, nested, and default command names during registration, including malformed inactive branches.
 - Reject option definitions whose names are empty, reserved by tokenization, or inconsistent with their joined-short metadata.
 - Record option requiredness in command signatures and reject omitted or valueless non-optional, non-defaulted options before command code can access an unbound wrapper.
 - Reject flag definitions whose names are empty or reserved by tokenization.
 - Keep tokens after a bare `--` positional instead of routing them into an unselected `remaining` option.
-- Require sendable command metatypes instead of sendable command instances on Swift 6.2+, avoiding retroactive `Sendable` diagnostics when a command adopts `ParsableCommand` in another source file.
 - Validate every registered command signature and default-subcommand target before resolving any path so malformed inactive commands fail closed.
 - Reject duplicate semantic labels within each argument, option, or flag category while preserving multiple aliases declared on one definition.
 - Reject required positional arguments declared after optional ones, which cannot be bound unambiguously by position.
@@ -40,6 +29,17 @@ All notable changes to Commander will be documented in this file.
 - Preserve option-looking arguments byte-for-byte when an option uses the `remaining` parsing strategy.
 - Remove the Peekaboo-specific executable-name heuristic from `Program` routing.
 - Reject missing required positional arguments while treating defaulted argument wrappers as optional input.
+- Require sendable command metatypes instead of sendable command instances on Swift 6.2+, avoiding retroactive `Sendable` diagnostics when a command adopts `ParsableCommand` in another source file.
+
+### Breaking
+- `CommanderError` and `CommanderProgramError` gained validation cases; downstream exhaustive switches must handle the new failures.
+- `CommanderProgramError` now rejects empty and option-shaped command names with `invalidCommandName`; exhaustive switches must handle the new case.
+- `CommanderError` now distinguishes duplicate argument, option, and flag labels plus required-after-optional positional definitions; exhaustive switches must add the four new cases.
+- `CommanderError` now rejects nameless options, empty or unreachable option spellings, and undeclared joined-short names with dedicated cases; exhaustive switches must add the four new cases.
+- `CommanderError` now rejects nameless flags and empty or unreachable flag spellings with dedicated cases; exhaustive switches must add the three new cases.
+
+### Platform/CI
+- Update the pinned checkout action to 7.0.1 for upstream checkout fixes and dependency updates.
 
 ## [0.2.4] - 2026-07-15
 
