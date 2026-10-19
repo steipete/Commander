@@ -4,6 +4,8 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+- Move macOS tests, Apple simulator builds, and release checks to Xcode 27 runners while preserving the existing deployment targets.
+
 ## [0.3.0] - 2026-09-13
 
 **Highlights:** Command routing and argument parsing now fail closed on malformed or ambiguous input, and downstream exhaustive switches must handle the new `CommanderError` and `CommanderProgramError` cases.
