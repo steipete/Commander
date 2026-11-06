@@ -36,7 +36,8 @@ public struct CommandSignature: Sendable {
     }
 
     /// Uses reflection to discover Commander property wrappers and build a
-    /// signature without manually enumerating each argument.
+    /// signature without manually enumerating each argument. Wrappers stored
+    /// on a superclass are included before wrappers stored on the subclass.
     public static func describe(_ command: some Any) -> CommandSignature {
         var signature = CommandSignature()
         Self.inspect(value: command, into: &signature)
@@ -44,13 +45,23 @@ public struct CommandSignature: Sendable {
     }
 
     private static func inspect(value: Any, into signature: inout CommandSignature) {
-        let mirror = Mirror(reflecting: value)
-        for child in mirror.children {
-            guard let label = child.label else { continue }
-            if let registrable = child.value as? CommanderMetadata {
-                registrable.register(label: label, signature: &signature)
-            } else if let optionGroup = child.value as? CommanderOptionGroup {
-                optionGroup.register(label: label, signature: &signature)
+        // Mirror.children lists only stored properties declared on that class.
+        // Inherited wrappers are on superclassMirror, from the root type down.
+        var hierarchy: [Mirror] = []
+        var current: Mirror? = Mirror(reflecting: value)
+        while let mirror = current {
+            hierarchy.append(mirror)
+            current = mirror.superclassMirror
+        }
+
+        for mirror in hierarchy.reversed() {
+            for child in mirror.children {
+                guard let label = child.label else { continue }
+                if let registrable = child.value as? CommanderMetadata {
+                    registrable.register(label: label, signature: &signature)
+                } else if let optionGroup = child.value as? CommanderOptionGroup {
+                    optionGroup.register(label: label, signature: &signature)
+                }
             }
         }
     }
