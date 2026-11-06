@@ -46,6 +46,17 @@ private struct RemainingArgumentCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private struct GroupWithArgument: CommanderParsable, Sendable {
+    @Argument var first: String
+    init() {}
+}
+
+private struct InterleavedArguments: CommanderParsable, Sendable {
+    @OptionGroup var group: GroupWithArgument
+    @Argument var second: String
+    init() {}
+}
+
 @Test
 func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
@@ -84,6 +95,16 @@ func `command parser recursively flattens nested option groups`() throws {
     #expect(parsed.options["json"] == ["result.json"])
     #expect(parsed.options["format"] == ["json"])
     #expect(parsed.flags == ["verbose"])
+}
+
+@Test
+func `interleaved option-group argument keeps declaration order`() throws {
+    let signature = CommandSignature.describe(InterleavedArguments())
+    let labels = signature.flattened().arguments.map(\.label)
+    #expect(labels == ["first", "second"])
+
+    let parsed = try CommandParser(signature: signature).parse(arguments: ["aaa", "bbb"])
+    #expect(zip(labels, parsed.positional).map { "\($0)=\($1)" } == ["first=aaa", "second=bbb"])
 }
 
 @Test
