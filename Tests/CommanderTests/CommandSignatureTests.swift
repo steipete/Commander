@@ -46,6 +46,31 @@ private struct RemainingArgumentCommand: CommanderParsable, Sendable {
     init() {}
 }
 
+private class RootCommandFields {
+    @Option(name: .long("root-option")) var rootOption: String?
+
+    init() {}
+}
+
+private class InheritedCommandFields: RootCommandFields {
+    @Argument var inheritedPath: String?
+    @Option(name: .long("inherited-option")) var inheritedOption: String?
+    @Flag(name: .long("inherited-verbose")) var inheritedVerbose = false
+    @OptionGroup var inheritedOutput: OutputOptions
+
+    override init() {
+        super.init()
+    }
+}
+
+private final class SubclassCommand: InheritedCommandFields {
+    @Option(name: .long("subclass-option")) var subclassOption: String?
+
+    override init() {
+        super.init()
+    }
+}
+
 @Test
 func `collects command signature`() throws {
     let signature = CommandSignature.describe(SampleCommand())
@@ -144,4 +169,16 @@ func `signature validation does not require invocation arguments`() {
     {
         try signature.validate()
     }
+}
+
+@Test
+func `describe includes property wrappers declared on a superclass`() throws {
+    let signature = CommandSignature.describe(SubclassCommand())
+
+    #expect(signature.arguments.map(\.label) == ["inheritedPath"])
+    #expect(signature.options.map(\.label) == ["rootOption", "inheritedOption", "subclassOption"])
+    #expect(signature.flags.map(\.label) == ["inheritedVerbose"])
+
+    let inheritedOutput = try #require(signature.optionGroups.first)
+    #expect(inheritedOutput.options.map(\.label) == ["format"])
 }

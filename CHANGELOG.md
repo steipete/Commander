@@ -4,6 +4,7 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+- Include `@Option`, `@Argument`, `@Flag`, and `@OptionGroup` properties declared on a superclass when building a command signature.
 - Move macOS tests, Apple simulator builds, and release checks to Xcode 27 runners while preserving the existing deployment targets.
 
 ## [0.3.0] - 2026-09-13
