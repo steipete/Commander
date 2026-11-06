@@ -10,6 +10,15 @@ public struct CommandSignature: Sendable {
     public private(set) var flags: [FlagDefinition]
     public private(set) var optionGroups: [CommandSignature]
 
+    /// `arguments` and `optionGroups` are separate arrays. This list records
+    /// the index each `append` registered so ``flattened()`` keeps declaration order.
+    private var argumentOrder: [RegisteredArgument]
+
+    private enum RegisteredArgument: Sendable {
+        case direct(Int)
+        case group(Int)
+    }
+
     public init(
         arguments: [ArgumentDefinition] = [],
         options: [OptionDefinition] = [],
@@ -20,17 +29,21 @@ public struct CommandSignature: Sendable {
         self.options = options
         self.flags = flags
         self.optionGroups = optionGroups
+        // Hand-built signatures keep today's shape: direct arguments, then groups.
+        self.argumentOrder = arguments.indices.map { .direct($0) } + optionGroups.indices.map { .group($0) }
     }
 
     mutating func append(_ component: CommandComponent) {
         switch component {
         case let .argument(definition):
+            self.argumentOrder.append(.direct(self.arguments.count))
             self.arguments.append(definition)
         case let .option(definition):
             self.options.append(definition)
         case let .flag(definition):
             self.flags.append(definition)
         case let .group(signature):
+            self.argumentOrder.append(.group(self.optionGroups.count))
             self.optionGroups.append(signature)
         }
     }
@@ -61,17 +74,24 @@ extension CommandSignature {
     /// signature. Useful when building help output or agent metadata;
     /// ``CommandParser`` applies this normalization automatically.
     public func flattened() -> CommandSignature {
-        var combined = CommandSignature(
-            arguments: self.arguments,
-            options: self.options,
-            flags: self.flags)
-        for group in self.optionGroups {
-            let flattenedGroup = group.flattened()
-            combined.arguments.append(contentsOf: flattenedGroup.arguments)
-            combined.options.append(contentsOf: flattenedGroup.options)
-            combined.flags.append(contentsOf: flattenedGroup.flags)
+        var combinedArguments: [ArgumentDefinition] = []
+        var combinedOptions = self.options
+        var combinedFlags = self.flags
+        for placement in self.argumentOrder {
+            switch placement {
+            case let .direct(index):
+                combinedArguments.append(self.arguments[index])
+            case let .group(index):
+                let flattenedGroup = self.optionGroups[index].flattened()
+                combinedArguments.append(contentsOf: flattenedGroup.arguments)
+                combinedOptions.append(contentsOf: flattenedGroup.options)
+                combinedFlags.append(contentsOf: flattenedGroup.flags)
+            }
         }
-        return combined
+        return CommandSignature(
+            arguments: combinedArguments,
+            options: combinedOptions,
+            flags: combinedFlags)
     }
 
     /// Appends the flags/options Commander expects across every Peekaboo CLI
