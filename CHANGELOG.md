@@ -4,6 +4,8 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+- Include inherited command wrappers and preserve positional declaration order across option groups, including a final remaining argument. Thanks @SebTardif!
+
 - Move macOS tests, Apple simulator builds, and release checks to Xcode 27 runners while preserving the existing deployment targets.
 
 ## [0.3.0] - 2026-09-13

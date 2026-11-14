@@ -163,6 +163,8 @@ let jsonFlag = FlagDefinition.make(
 
 Positional arguments consume one token by default. Declare every required positional before the first optional positional so omitted values remain unambiguous. The final positional can opt into `@Argument(parsing: .remaining)` when a command intentionally accepts multiple values; all other commands reject trailing arguments instead of silently ignoring them.
 
+Reflected class commands include inherited wrappers before subclass wrappers. Positional arguments inside option groups keep the group's declaration position, including before a final `remaining` argument. Explicitly constructed `CommandSignature` values keep their direct arguments before the supplied option groups.
+
 Long options accept attached values such as `--output=-dash`. Short options only accept joined values when they opt in
 explicitly, for example `@Option(name: .customShort("D", allowingJoined: true)) var define: String?` accepts `-Ddebug`.
 Direct `OptionDefinition` and `FlagDefinition` values must declare at least one non-empty name, and every entry in
