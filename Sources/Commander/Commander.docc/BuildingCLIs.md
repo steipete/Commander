@@ -44,6 +44,11 @@ before command code can access an unbound wrapper.
 parser callers can pass `CommandSignature.describe(command)` without separately
 normalizing reusable groups first.
 
+Reflection includes superclass wrappers before subclass wrappers. A positional
+inside an option group stays at the group's declaration position, so a group
+can precede a final `remaining` positional. When constructing a signature with
+arrays explicitly, direct arguments precede the supplied groups.
+
 ## Route subcommands
 
 Aggregate commands by constructing a ``Program`` with ``CommandDescriptor``
