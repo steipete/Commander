@@ -4,8 +4,14 @@ All notable changes to Commander will be documented in this file.
 
 ## Unreleased
 
+## [0.3.1] - 2026-11-15
+
+**Highlights:** Inherited command fields are now included, and positional arguments retain declaration order across option groups.
+
+### Fixed
 - Include inherited command wrappers and preserve positional declaration order across option groups, including a final remaining argument. Thanks @SebTardif!
 
+### Platform/CI
 - Move macOS tests, Apple simulator builds, and release checks to Xcode 27 runners while preserving the existing deployment targets.
 
 ## [0.3.0] - 2026-09-13
